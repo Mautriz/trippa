@@ -1,0 +1,26 @@
+# Python
+*egg-info
+__pycache__
+
+# IDE
+.devcontainer
+.idea
+**/.DS_Store
+.vscode/
+
+# Envs
+.venv/
+venv/
+ENV/
+
+# Poetry
+/dist
+.python-version
+
+# Docker
+/.env-dev
+/.env
+
+# Checks
+.pytest_cache
+.mypy_cache

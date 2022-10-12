@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "figo"
+version = "0.1.0"
+description = "Feature Store un po'scemo"
+authors = ["Mauro Insacco <mauro.insacco@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.70.1"
+httpx = "^0.20.0"
+pydantic = "1.9.*"
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+isort = "^5.9.3"
+mypy = "^0"
+pylint = "^2.10.2"
+pytest = "^7.1.1"
+pytest-asyncio = "^0.16.0"
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.BASIC]
+docstring-min-length = 5
+
+[tool.pylint."MESSAGES CONTROL"]
+persistent = "no"
+max-line-length = 120
+ignore-long-lines = "^.*https?://.+$"
+disable = [
+    "consider-using-dict-items",
+    "duplicate-code",
+    "fixme",
+    "missing-module-docstring",
+    "too-few-public-methods",
+    "too-many-instance-attributes",
+    "too-many-arguments",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "broad-except"
+]
+extension-pkg-whitelist = "pydantic"
+
+[tool.mypy]
+strict = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+implicit_reexport = true
+disallow_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+# plugins = "pydantic.mypy,strawberry.ext.mypy_plugin,sqlalchemy.ext.mypy.plugin"
+
+[[tool.mypy.overrides]]
+# No type stubs available
+module = "primapy_plogging.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# No type stubs available
+module = "primapy_tracing.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# No type stubs available
+module = "opentelemetry.*"
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
