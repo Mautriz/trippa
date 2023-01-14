@@ -6,6 +6,7 @@ from __future__ import annotations
 from enum import Enum
 
 from typing import Any, Awaitable, Callable, overload
+from figo.errors import MissingInputException
 
 from utils.types import T
 
@@ -52,7 +53,7 @@ class input_feature:
         def raiser() -> T:
             if self.default_value != RaiseOnMissing.TOKEN:
                 return self.default_value
-            raise Exception(f"Missing input property: {feature_name}")
+            raise MissingInputException(feature_name)
 
         return Feature[T](
             name=feature_name,
