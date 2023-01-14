@@ -3,40 +3,58 @@ Decorators to create features from resolver functions
 """
 
 from __future__ import annotations
+from enum import Enum
 
-from inspect import signature
-from typing import Any, Awaitable, Callable, Type, cast, overload
+from typing import Any, Awaitable, Callable, overload
 
 from utils.types import T
 
-from .base import Feature, Info
+from .base import Feature
 
 
-@overload
-def feature(
-    resolver: Callable[[Info[Any]], Awaitable[T]],
-) -> Feature[T]:
-    ...
+class feature:
+    @overload
+    def __call__(
+        self,
+        resolver: Callable[..., Awaitable[T]],
+    ) -> Feature[T]:
+        ...
+
+    @overload
+    def __call__(self, resolver: Callable[..., T]) -> Feature[T]:
+        ...
+
+    def __call__(
+        self,
+        resolver: Callable[..., Any],
+    ) -> Feature[Any]:
+        feature_name = resolver.__name__
+
+        return Feature[T](
+            name=feature_name,
+            resolver=resolver,
+        )
 
 
-@overload
-def feature(resolver: Callable[[Info[Any]], T]) -> Feature[T]:
-    ...
+class RaiseOnMissing(Enum):
+    TOKEN = ""
 
 
-def feature(
-    resolver: Callable[[Info[Any]], Any],
-) -> Feature[Any]:
-    feature_name = resolver.__name__
-    resolver_signature = signature(resolver, eval_str=True)
-    feature_type = cast(
-        Type[T],
-        resolver_signature.return_annotation,
-    )
+class input_feature:
+    default_value: Any | RaiseOnMissing = RaiseOnMissing.TOKEN
 
-    return Feature[T](
-        name=feature_name,
-        description=(resolver.__doc__ or "").strip(),
-        type=feature_type,
-        resolver=resolver,
-    )
+    def __call__(
+        self,
+        resolver: Callable[[], T],
+    ) -> Feature[T]:
+        feature_name = resolver.__name__
+
+        def raiser() -> T:
+            if self.default_value != RaiseOnMissing.TOKEN:
+                return self.default_value
+            raise Exception(f"Missing input property: {feature_name}")
+
+        return Feature[T](
+            name=feature_name,
+            resolver=raiser,
+        )

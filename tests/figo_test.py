@@ -1,22 +1,20 @@
-from typing import Any
-
 import pytest
 
 from figo import Figo
-from tests.sample_features import ciao
+from tests.sample_features import ciao, first, uuid
 
 
 @pytest.fixture
-def figo() -> Figo[Any]:
-    figo_store = Figo[Any]({})
+def figo() -> Figo:
+    figo_store = Figo([first, ciao, uuid], {uuid: "uuid_prova"})
 
     return figo_store
 
 
 @pytest.mark.asyncio
 async def test_figo(
-    figo: Figo[Any],
-) -> None:  # pylint: disable=redefined-outer-name
-    result = await figo.resolve(ciao, ("quote", "id"))
+    figo: Figo,
+) -> None:
+    result = await figo.resolve(ciao)
 
-    assert result == "first('quote', 'id')first('boh', 'ciaoo')"
+    assert result == "firstuuid_provaciao"

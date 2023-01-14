@@ -7,7 +7,7 @@ from utils.types import T
 
 
 @dataclass(frozen=True)
-class SuccessResult(Generic[T]):
+class ResultSuccess(Generic[T]):
     value: T
 
 
@@ -16,4 +16,4 @@ class ResultFailure:
     error: Any
 
 
-FeatureResult = SuccessResult[T] | ResultFailure
+FeatureResult = ResultSuccess[T] | ResultFailure
