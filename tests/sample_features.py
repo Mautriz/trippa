@@ -8,6 +8,18 @@ def uuid() -> str:
     ...
 
 
+@input_feature()
+def missing_input() -> int:
+    """uuid of the entity"""
+    ...
+
+
+@feature()
+def using_missing_input(missing_input: int) -> int:
+    """uuid of the entity"""
+    return missing_input
+
+
 @feature()
 def first(uuid: str) -> str:
     return "first" + uuid
