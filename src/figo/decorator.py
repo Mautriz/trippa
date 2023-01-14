@@ -25,19 +25,18 @@ def feature(resolver: Callable[[Info[Any]], T]) -> Feature[T]:
 
 
 def feature(
-    resolver: Callable[[Info[Any]], Awaitable[T] | T],
-) -> Feature[T]:
+    resolver: Callable[[Info[Any]], Any],
+) -> Feature[Any]:
     feature_name = resolver.__name__
     resolver_signature = signature(resolver, eval_str=True)
-    feature_type = cast(Type[T], resolver_signature.return_annotation)
+    feature_type = cast(
+        Type[T],
+        resolver_signature.return_annotation,
+    )
 
     return Feature[T](
         name=feature_name,
-        description=_get_documentation(resolver),
+        description=(resolver.__doc__ or "").strip(),
         type=feature_type,
         resolver=resolver,
     )
-
-
-def _get_documentation(resolver: Callable[..., Any]) -> str:
-    return (resolver.__doc__ or "").strip()

@@ -14,7 +14,9 @@ def figo() -> Figo[Any]:
 
 
 @pytest.mark.asyncio
-async def test_figo(figo: Figo[Any]) -> None:  # pylint: disable=redefined-outer-name
+async def test_figo(
+    figo: Figo[Any],
+) -> None:  # pylint: disable=redefined-outer-name
     result = await figo.resolve(ciao, ("quote", "id"))
 
     assert result == "first('quote', 'id')first('boh', 'ciaoo')"

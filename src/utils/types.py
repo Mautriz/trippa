@@ -6,8 +6,6 @@ from inspect import isclass
 from types import UnionType
 from typing import Any, Optional, Tuple, Type, TypeGuard, TypeVar, Union
 
-from pydantic import BaseModel
-
 T = TypeVar("T", bound=Any)
 V = TypeVar("V", bound=Any)
 
@@ -35,12 +33,17 @@ def decompose_generic_type(
     return (origin or typ), typing.get_args(typ)  # type: ignore
 
 
-def is_optional(typ: AnyType) -> TypeGuard[Optional[AnyType]]:
+def is_optional(
+    typ: AnyType,
+) -> TypeGuard[Optional[AnyType]]:
     """
     Returns True if the type admits None.
     """
 
-    origin, args = decompose_generic_type(typ)
+    (
+        origin,
+        args,
+    ) = decompose_generic_type(typ)
 
     # Optionals are represented as unions
     if origin != Union:  # type: ignore
@@ -50,7 +53,9 @@ def is_optional(typ: AnyType) -> TypeGuard[Optional[AnyType]]:
     return any(arg == None.__class__ for arg in args)
 
 
-def get_optional_annotation(typ: Optional[AnyType]) -> AnyType:
+def get_optional_annotation(
+    typ: Optional[AnyType],
+) -> AnyType:
     """
     Returns the type wrapped inside the optional annotation.
     """
@@ -59,9 +64,7 @@ def get_optional_annotation(typ: Optional[AnyType]) -> AnyType:
     return Union[non_none_types] if len(non_none_types) > 1 else non_none_types[0]  # type: ignore
 
 
-def is_enum(typ: Type[Any]) -> TypeGuard[Type[Enum]]:
+def is_enum(
+    typ: Type[Any],
+) -> TypeGuard[Type[Enum]]:
     return isclass(typ) and issubclass(typ, Enum)
-
-
-def is_pydantic(typ: Type[Any]) -> TypeGuard[Type[BaseModel]]:
-    return isclass(typ) and issubclass(typ, BaseModel)

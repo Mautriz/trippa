@@ -26,8 +26,8 @@ format-check: ## Check the code format with no actual side effects
 
 .PHONY: lint
 lint: ## Launch the linting tool
-	poetry run pylint -j 0 $(SRC_DIR)
-	poetry run pylint -j 0 -d missing-function-docstring $(TEST_DIR)
+	poetry run ruff $(SRC_DIR)
+	poetry run ruff $(TEST_DIR)
 
 .PHONY: type-check
 type-check: ## Launch the type checking tool

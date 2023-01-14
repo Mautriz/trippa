@@ -22,12 +22,19 @@ class EntityResults:
     results: dict[Feature[Any], Any] = dataclasses.field(default_factory=dict)
 
     def __getitem__(self, __key: Feature[T]) -> Awaitable[FeatureResult[T]]:
-        return cast(Awaitable[FeatureResult[T]], self.results[__key])
+        return cast(
+            Awaitable[FeatureResult[T]],
+            self.results[__key],
+        )
 
     def get(self, __key: Feature[T]) -> Awaitable[FeatureResult[T]] | None:
         return self.results.get(__key)
 
-    def __setitem__(self, __key: Feature[T], item: Awaitable[FeatureResult[T]]) -> None:
+    def __setitem__(
+        self,
+        __key: Feature[T],
+        item: Awaitable[FeatureResult[T]],
+    ) -> None:
         self.results[__key] = item
 
 
@@ -38,14 +45,20 @@ class Figo(Generic[V]):
         default_factory=lambda: defaultdict(EntityResults)
     )
 
-    async def resolve(self, feature: Feature[T], entity_key: EntityKey) -> T:
+    async def resolve(
+        self,
+        feature: Feature[T],
+        entity_key: EntityKey,
+    ) -> T:
         result = await self.safe_resolve(feature, entity_key)
         if isinstance(result, ResultFailure):
             raise result.error
         return result.value
 
     async def safe_resolve(
-        self, feature: Feature[T], entity_key: EntityKey
+        self,
+        feature: Feature[T],
+        entity_key: EntityKey,
     ) -> FeatureResult[T]:
         entity_results = self.results[entity_key]
 
@@ -56,11 +69,19 @@ class Figo(Generic[V]):
         return await entity_results[feature]
 
     async def _safe_resolve(
-        self, feature: Feature[T], entity_key: EntityKey
+        self,
+        feature: Feature[T],
+        entity_key: EntityKey,
     ) -> FeatureResult[T]:
         try:
             task = maybe_await(
-                feature.resolver(Info(self.ctx, entity_key, self.resolve))
+                feature.resolver(
+                    Info(
+                        self.ctx,
+                        entity_key,
+                        self.resolve,
+                    )
+                )
             )
             return SuccessResult(await task)
         except Exception as err:

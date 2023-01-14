@@ -9,13 +9,20 @@ from .entity import EntityId, EntityKey, EntityName
 
 
 class FeatureResolver(Protocol, Generic[T]):
-    async def __call__(self, feature: Feature[T], entity_key: EntityKey) -> T:
+    async def __call__(
+        self,
+        feature: Feature[T],
+        entity_key: EntityKey,
+    ) -> T:
         ...
 
 
 class Info(Generic[V]):
     def __init__(
-        self, ctx: V, entity_key: EntityKey, resolve: FeatureResolver[Any]
+        self,
+        ctx: V,
+        entity_key: EntityKey,
+        resolve: FeatureResolver[Any],
     ) -> None:
         self.ctx = ctx
         self.entity_key = entity_key
@@ -30,9 +37,17 @@ class Info(Generic[V]):
         return self.entity_key[1]
 
     async def resolve(
-        self, feature: Feature[T], entity_key: EntityKey | None = None
+        self,
+        feature: Feature[T],
+        entity_key: EntityKey | None = None,
     ) -> T:
-        return cast(T, await self._resolve(feature, entity_key or self.entity_key))
+        return cast(
+            T,
+            await self._resolve(
+                feature,
+                entity_key or self.entity_key,
+            ),
+        )
 
 
 @dataclasses.dataclass
