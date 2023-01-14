@@ -3,11 +3,11 @@ Decorators to create features from resolver functions
 """
 
 from __future__ import annotations
+
 from enum import Enum
-
 from typing import Any, Awaitable, Callable, overload
-from figo.errors import MissingInputException
 
+from figo.errors import MissingInputException
 from utils.types import T
 
 from .base import Feature

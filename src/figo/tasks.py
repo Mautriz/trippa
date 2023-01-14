@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import dataclasses
+from dataclasses import dataclass
 from typing import Any, Awaitable, cast
+
 from figo.base import AnyFeature, Feature
 from figo.results import FeatureResult
-
 from utils.types import T
 
 

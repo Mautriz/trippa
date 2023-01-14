@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-from functools import cached_property
 import inspect
+from functools import cached_property
 from typing import Any, Awaitable, Callable, Generic, Iterable, Type, cast
 
 from utils.types import T
