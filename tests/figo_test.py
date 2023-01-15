@@ -7,10 +7,12 @@ from figo.results import ResultFailure, ResultSuccess
 from tests.sample_features import ciao, first, missing_input, using_missing_input, uuid
 
 
-@pytest.fixture
-def figo() -> Figo:
-    figo_store = Figo.from_modules([sample_features])
-    return figo_store
+@pytest.mark.asyncio
+async def test_input(
+    figo: Figo,
+) -> None:
+    result = await figo.start().inputs({uuid: "assurdo"}).resolve(uuid)
+    assert result == "assurdo"
 
 
 @pytest.mark.asyncio

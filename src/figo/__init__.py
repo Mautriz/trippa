@@ -1,5 +1,5 @@
-from .base import AnyFeature as AnyFeature
-from .base import Feature as Feature
+from .feature import AnyFeature as AnyFeature
+from .feature import Feature as Feature
 from .decorator import feature as feature
 from .entity import EntityId as EntityId
 from .entity import EntityKey as EntityKey
