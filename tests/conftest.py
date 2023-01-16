@@ -1,7 +1,8 @@
 import pytest
-from figo import Figo
-import tests.sample_features as sample_features
+
 import tests.batch_features as batch_features
+import tests.sample_features as sample_features
+from figo import Figo
 
 
 @pytest.fixture

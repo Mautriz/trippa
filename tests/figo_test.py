@@ -1,6 +1,5 @@
 import pytest
 
-import tests.sample_features as sample_features
 from figo import Figo
 from figo.errors import MissingInputException, UnknownFeature
 from figo.results import ResultFailure, ResultSuccess

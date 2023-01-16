@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from typing import Callable
 
 import pandas as pd
 
-from figo.feature import Feature
+from figo.base import Feature
 from utils.types import T
 
 
