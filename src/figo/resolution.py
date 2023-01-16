@@ -3,19 +3,19 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, ClassVar, Sequence, Type, cast
+from typing import Any, ClassVar, Mapping, Sequence, Type, cast
 
 import pandas as pd
 import ray.data
 from typing_extensions import Self
 
-from figo.batch_feature import BatchFeature, BatchRowFeature
 from figo.errors import UnknownFeature
 from figo.tasks import EntityTasks
+from figo.variants import BatchFeature, BatchRowFeature, BatchSource
 from utils.asyncio import maybe_await
 from utils.types import T
 
-from .base import AnyFeature, Feature
+from .base import AnyFeature, BaseFeature
 from .results import FeatureResult, ResultFailure, ResultSuccess
 
 logger = getLogger(__name__)
@@ -28,10 +28,10 @@ class Resolution:
     _batch_result: ray.data.Dataset = field(init=False)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
-    def input(self, inputs: dict[AnyFeature | str, Any]) -> Self:
+    def input(self, inputs: Mapping[AnyFeature, Any] | Mapping[str, Any]) -> Self:
         # Set results from inputs
         parsed_input: dict[str, FeatureResult[Any]] = {
-            f.name if isinstance(f, Feature) else f: ResultSuccess(v)
+            f.name if isinstance(f, BaseFeature) else f: ResultSuccess(v)
             for f, v in inputs.items()
         }
         self._results = self._results | parsed_input  # type: ignore
@@ -60,14 +60,14 @@ class Resolution:
 
     async def resolve(
         self,
-        feature: Feature[T],
+        feature: BaseFeature[T],
     ) -> T:
         result = await self.safe_resolve(feature)
         if isinstance(result, ResultFailure):
             raise result.error
         return result.value
 
-    async def safe_resolve(self, feature: Feature[T]) -> FeatureResult[T]:
+    async def safe_resolve(self, feature: BaseFeature[T]) -> FeatureResult[T]:
         if result := self._results.get(feature.name):
             return result
 
@@ -78,9 +78,13 @@ class Resolution:
 
     async def _safe_resolve(
         self,
-        feature: Feature[T],
+        feature: BaseFeature[T],
     ) -> FeatureResult[T]:
         try:
+            if isinstance(feature, BatchSource):
+                self._batch_result = await self._batch_source_resolver(feature)
+                return cast(Any, ResultSuccess(None))
+
             if isinstance(feature, BatchFeature):
                 self._batch_result = await self._batch_feature_resolver(feature)
                 return cast(Any, ResultSuccess(None))
@@ -89,7 +93,7 @@ class Resolution:
                 self._batch_result = await self._batch_row_resolver(feature)
                 return cast(Any, ResultSuccess(None))
 
-            if isinstance(feature, Feature):
+            if isinstance(feature, BaseFeature):
                 result = await self._instance_resolver(feature)
                 self._results[feature.name] = result
                 return result
@@ -98,6 +102,24 @@ class Resolution:
             result = ResultFailure(err)
             self._results[feature.name] = result
             return result
+
+    async def _batch_source_resolver(self, feature: BatchSource) -> ray.data.Dataset:
+        instance, batch = self._get_partitioned_features(feature.args_names)
+        instance_kwargs = await self.resolve_many(instance)
+        await self.resolve_many(batch)
+
+        dataset: ray.data.Dataset | None = None
+
+        async for df in feature.resolver(**instance_kwargs):
+            new_dataset = ray.data.from_pandas(pd.DataFrame({feature.name: df}))
+            dataset = dataset.union([new_dataset]) if dataset else new_dataset
+
+        if not dataset:
+            raise Exception(
+                f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
+            )
+
+        return dataset
 
     async def _batch_row_resolver(self, feature: BatchRowFeature) -> ray.data.Dataset:
         instance, batch = self._get_partitioned_features(feature.args_names)
@@ -149,7 +171,7 @@ class Resolution:
             ),
         )
 
-    async def _instance_resolver(self, feature: Feature) -> FeatureResult:
+    async def _instance_resolver(self, feature: BaseFeature) -> FeatureResult:
         instance, _ = self._get_partitioned_features(feature.args_names)
         fn_kwargs = await self.resolve_many(instance)
         task = maybe_await(feature.resolver(**fn_kwargs))
@@ -157,7 +179,7 @@ class Resolution:
 
     def _get_partitioned_features(
         self, feature_names: list[str]
-    ) -> tuple[Sequence[Feature], Sequence[BatchFeature | BatchRowFeature]]:
+    ) -> tuple[Sequence[BaseFeature], Sequence[BatchFeature | BatchRowFeature]]:
         features = [self.features[name] for name in feature_names]
 
         batch = [
@@ -199,7 +221,7 @@ class Figo:
             feature
             for module in modules
             for feature in module.__dict__.values()
-            if isinstance(feature, Feature)
+            if isinstance(feature, BaseFeature)
         ]
 
     def start(self) -> Resolution:

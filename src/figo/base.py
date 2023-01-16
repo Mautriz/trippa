@@ -9,7 +9,7 @@ from utils.types import T
 
 
 @dataclasses.dataclass
-class Feature(Generic[T]):  # pylint: disable=too-many-instance-attributes
+class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
     name: str
     resolver: Callable[..., Awaitable[T] | T]
 
@@ -39,4 +39,4 @@ class Feature(Generic[T]):  # pylint: disable=too-many-instance-attributes
         return inspect.signature(self.resolver, eval_str=True)
 
 
-AnyFeature = Feature[Any]
+AnyFeature = BaseFeature[Any]

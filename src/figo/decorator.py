@@ -11,7 +11,7 @@ from typing import Any, Awaitable, Callable, overload
 from figo.errors import MissingInputException
 from utils.types import T
 
-from .base import AnyFeature, Feature
+from .base import AnyFeature, BaseFeature
 
 
 @dataclass(frozen=True)
@@ -20,18 +20,18 @@ class feature:
     def __call__(
         self,
         resolver: Callable[..., Awaitable[T]],
-    ) -> Feature[T]:
+    ) -> BaseFeature[T]:
         ...
 
     @overload
-    def __call__(self, resolver: Callable[..., T]) -> Feature[T]:
+    def __call__(self, resolver: Callable[..., T]) -> BaseFeature[T]:
         ...
 
     def __call__(
         self,
         resolver: Callable[..., Any],
-    ) -> Feature[Any]:
-        return Feature[T](name=resolver.__name__, resolver=resolver)
+    ) -> BaseFeature[Any]:
+        return BaseFeature[T](name=resolver.__name__, resolver=resolver)
 
 
 class RaiseOnMissing(Enum):
@@ -45,7 +45,7 @@ class input_feature:
     def __call__(
         self,
         resolver: Callable[[], T],
-    ) -> Feature[T]:
+    ) -> BaseFeature[T]:
         feature_name = resolver.__name__
 
         def raiser() -> T:
@@ -53,7 +53,7 @@ class input_feature:
                 return self.default_value
             raise MissingInputException(feature_name)
 
-        return Feature[T](
+        return BaseFeature[T](
             name=feature_name,
             resolver=raiser,
         )
