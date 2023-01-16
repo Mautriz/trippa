@@ -25,11 +25,11 @@ logger = getLogger(__name__)
 @dataclass
 class Resolution:
     features: dict[str, AnyFeature]
+    _results: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _batch_result: ray.data.Dataset = field(init=False)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
-    _results: dict[str, FeatureResult[Any]] = field(default_factory=dict)
 
-    def inputs(self, inputs: dict[AnyFeature | str, Any]) -> Self:
+    def input(self, inputs: dict[AnyFeature | str, Any]) -> Self:
         # Set results from inputs
         parsed_input: dict[str, FeatureResult[Any]] = {
             f.name if isinstance(f, Feature) else f: ResultSuccess(v)
@@ -38,7 +38,7 @@ class Resolution:
         self._results = self._results | parsed_input  # type: ignore
         return self
 
-    def batch_inputs(self, inputs: pd.DataFrame) -> Self:
+    def input_batch(self, inputs: pd.DataFrame) -> Self:
         self._batch_result = ray.data.from_pandas(inputs)
         return self
 
@@ -47,12 +47,16 @@ class Resolution:
         return self._batch_result
 
     async def resolve_many(self, features: list[AnyFeature]) -> dict[str, Any]:
-        return {f.name: await self.resolve(f) for f in features}
+        results = await asyncio.gather(*[self.resolve(f) for f in features])
+        return {f.name: results[i] for i, f in enumerate(features)}
 
     async def safe_resolve_many(
         self, features: list[AnyFeature]
     ) -> dict[str, FeatureResult[Any]]:
-        return {f.name: await self.safe_resolve(f) for f in features}
+        results: list[FeatureResult] = await asyncio.gather(
+            *[self.safe_resolve(f) for f in features]
+        )
+        return {f.name: results[i] for i, f in enumerate(features)}
 
     async def resolve(
         self,
@@ -77,49 +81,62 @@ class Resolution:
         feature: Feature[T],
     ) -> FeatureResult[T]:
         try:
-            fn_kwargs = await self._resolve_deps(feature)
-            # if isinstance(feature, BatchFeature):
-            #     self._batch_result = self._batch_add_column(feature)
-            #     return cast(Any, ResultSuccess(None))
+            if isinstance(feature, BatchFeature):
+                self._batch_result = await self._batch_feature_resolver(feature)
+                return cast(Any, ResultSuccess(None))
 
-            # get resolution arguments
+            if isinstance(feature, BatchRowFeature):
+                self._batch_result = await self._batch_row_resolver(feature)
+                return cast(Any, ResultSuccess(None))
 
-            task = maybe_await(feature.resolver(**fn_kwargs))
-            result = ResultSuccess(await task)
-            self._results[feature.name] = result
-            return result
+            if isinstance(feature, Feature):
+                result = await self._instance_resolver(feature)
+                self._results[feature.name] = result
+                return result
 
         except Exception as err:
             result = ResultFailure(err)
             self._results[feature.name] = result
             return result
 
-    def _batch_add_column(self, feature: BatchFeature) -> ray.data.Dataset:
+    async def _batch_row_resolver(self, feature: BatchRowFeature) -> ray.data.Dataset:
+        instance, batch = self._get_partitioned_features(feature.args_names)
+        instance_kwargs = await self.resolve_many(instance)
+
+        def _wrapped_resolver(row) -> Any:
+            batch_kwargs = {arg.name: row[arg.name] for arg in batch}
+            return feature.resolver(**(batch_kwargs | instance_kwargs))
+
+        return self._batch_result.map(_wrapped_resolver)
+
+    async def _batch_feature_resolver(self, feature: BatchFeature) -> ray.data.Dataset:
+        instance, batch = self._get_partitioned_features(feature.args_names)
+        instance_kwargs = await self.resolve_many(instance)
+
         def _wrapped_resolver(data: pd.DataFrame) -> pd.Series:
-            fn_kwargs = {arg: data[arg] for arg in feature.args_names}
-            return feature.resolver(**fn_kwargs)
+            batch_kwargs = {arg.name: data[arg.name] for arg in batch}
+            return feature.resolver(**(batch_kwargs | instance_kwargs))
 
         return self._batch_result.add_column(feature.name, _wrapped_resolver)
 
-    async def _resolve_deps(self, feature: Feature) -> dict[str, Any]:
-        await asyncio.gather(
-            *[self.safe_resolve(self.features[f_name]) for f_name in feature.args_names]
-        )
-        as_kwargs: dict[str, Any] = {}
-        for f in feature.args_names:
-            arg_feature = self.features[f]
-            match arg_feature:
-                case BatchFeature() | BatchRowFeature():
-                    as_kwargs[arg_feature.name] = "ciao"
-                case Feature():
-                    result = self._results[arg_feature.name]
-                    if isinstance(result, ResultFailure):
-                        raise result.error
-                    as_kwargs[arg_feature.name] = result.value
+    async def _instance_resolver(self, feature: Feature) -> FeatureResult:
+        instance, _ = self._get_partitioned_features(feature.args_names)
+        fn_kwargs = await self.resolve_many(instance)
+        task = maybe_await(feature.resolver(**fn_kwargs))
+        return ResultSuccess(await task)
 
-        return as_kwargs
+    def _get_partitioned_features(
+        self, feature_names: list[str]
+    ) -> tuple[list[Feature], list[BatchFeature | BatchRowFeature]]:
+        features = [self.features[name] for name in feature_names]
+        batch = [
+            f
+            for f in features
+            if isinstance(f, BatchFeature) or isinstance(f, BatchRowFeature)
+        ]
+        instance = [f for f in features if isinstance(f, Feature)]
 
-    # def _
+        return instance, batch
 
 
 class Figo:

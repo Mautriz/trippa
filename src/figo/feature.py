@@ -20,8 +20,8 @@ class Feature(Generic[T]):  # pylint: disable=too-many-instance-attributes
         return self.name
 
     @cached_property
-    def args_names(self) -> Iterable[str]:
-        return self._signature.parameters.keys()
+    def args_names(self) -> list[str]:
+        return list(self._signature.parameters.keys())
 
     @cached_property
     def description(self) -> str:

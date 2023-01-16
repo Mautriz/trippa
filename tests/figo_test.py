@@ -11,7 +11,7 @@ from tests.sample_features import ciao, first, missing_input, using_missing_inpu
 async def test_input(
     figo: Figo,
 ) -> None:
-    result = await figo.start().inputs({uuid: "assurdo"}).resolve(uuid)
+    result = await figo.start().input({uuid: "assurdo"}).resolve(uuid)
     assert result == "assurdo"
 
 
@@ -19,7 +19,7 @@ async def test_input(
 async def test_input_as_string(
     figo: Figo,
 ) -> None:
-    result = await figo.start().inputs({uuid: "assurdo"}).resolve(ciao)
+    result = await figo.start().input({uuid: "assurdo"}).resolve(ciao)
     assert result == "firstassurdociao"
 
 
@@ -27,7 +27,7 @@ async def test_input_as_string(
 async def test_input_as_feature(
     figo: Figo,
 ) -> None:
-    result = await figo.start().inputs({uuid: "assurdo"}).resolve(ciao)
+    result = await figo.start().input({uuid: "assurdo"}).resolve(ciao)
     assert result == "firstassurdociao"
 
 
@@ -42,7 +42,7 @@ async def test_resolve_many(
     figo: Figo,
 ) -> None:
     result = (
-        await figo.start().inputs({uuid: "assurdo"}).resolve_many([ciao, uuid, first])
+        await figo.start().input({uuid: "assurdo"}).resolve_many([ciao, uuid, first])
     )
 
     assert result == {
@@ -58,7 +58,7 @@ async def test_safe_resolve_many(
 ) -> None:
     result = (
         await figo.start()
-        .inputs({uuid: "assurdo"})
+        .input({uuid: "assurdo"})
         .safe_resolve_many([ciao, uuid, first, missing_input, using_missing_input])
     )
 

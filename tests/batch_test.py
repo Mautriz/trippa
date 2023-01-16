@@ -9,7 +9,7 @@ async def test_batch_calculation(figo: Figo):
 
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
     result = (
-        await figo.start().batch_inputs(inputs).resolve_batch([other_feature])
+        await figo.start().input_batch(inputs).resolve_batch([other_feature])
     ).to_pandas()
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
@@ -25,7 +25,7 @@ async def test_batch_input(figo: Figo):
 
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
     result = (
-        await figo.start().batch_inputs(inputs).resolve_batch([other_feature])
+        await figo.start().input_batch(inputs).resolve_batch([other_feature])
     ).to_pandas()
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
