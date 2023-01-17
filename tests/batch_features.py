@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import AsyncGenerator, AsyncIterable
+from typing import AsyncIterable
 
 import pandas as pd
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, Callable, Generator, Iterable
+from typing import AsyncIterable, Callable
 
 import pandas as pd
 

@@ -26,7 +26,7 @@ async def test_batch_source(figo: Figo):
         end_date: end,
     }
 
-    result = (await figo.start().input(inputs).resolve_batch([date_series])).to_pandas()
+    result = await figo.start().input(inputs).resolve_batch([date_series])
 
     assert result["date_series"].to_list() == pd.date_range(start, end).to_list()
 
@@ -34,9 +34,7 @@ async def test_batch_source(figo: Figo):
 @pytest.mark.asyncio
 async def test_batch_calculation(figo: Figo):
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
-    result = (
-        await figo.start().input_batch(inputs).resolve_batch([other_feature])
-    ).to_pandas()
+    result = await figo.start().input_batch(inputs).resolve_batch([other_feature])
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
     assert result["other_feature"].to_list() == [
@@ -49,9 +47,7 @@ async def test_batch_calculation(figo: Figo):
 @pytest.mark.asyncio
 async def test_batch_row_calculation(figo: Figo):
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
-    result = (
-        await figo.start().input_batch(inputs).resolve_batch([other_row_feature])
-    ).to_pandas()
+    result = await figo.start().input_batch(inputs).resolve_batch([other_row_feature])
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
     assert result["other_row_feature"].to_list() == [
@@ -65,6 +61,6 @@ async def test_batch_row_calculation(figo: Figo):
 async def test_batch_input(figo: Figo):
 
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
-    result = (await figo.start().input_batch(inputs).resolve_batch([uuids])).to_pandas()
+    result = await figo.start().input_batch(inputs).resolve_batch([uuids])
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
