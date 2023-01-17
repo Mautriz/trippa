@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, Callable
+from typing import AsyncIterable, Awaitable, Callable
 
 import pandas as pd
 
@@ -12,7 +12,7 @@ class Feature(BaseFeature):
 
 
 class BatchFeature(BaseFeature[pd.Series]):
-    resolver: Callable[..., pd.Series]
+    resolver: Callable[..., pd.Series] | Callable[..., Awaitable[pd.Series]]
 
 
 class BatchRowFeature(BaseFeature[T]):
@@ -44,5 +44,7 @@ class batch_row_feature:
 
 
 class batch_feature:
-    def __call__(self, resolver: Callable[..., pd.Series]) -> BatchFeature:
+    def __call__(
+        self, resolver: Callable[..., pd.Series] | Callable[..., Awaitable[pd.Series]]
+    ) -> BatchFeature:
         return BatchFeature(name=resolver.__name__, resolver=resolver)

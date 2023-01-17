@@ -30,8 +30,7 @@ logger = getLogger(__name__)
 @dataclass
 class Resolution:
     features: dict[str, AnyFeature]
-    _batch: md.DataFrame = field(init=False, default=None)  # type: ignore
-    _results: dict[str, FeatureResult[Any]] = field(default_factory=dict)
+    _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
     def input(self, inputs: Mapping[AnyFeature, Any] | Mapping[str, Any]) -> Self:
@@ -40,17 +39,18 @@ class Resolution:
             f.name if isinstance(f, BaseFeature) else f: ResultSuccess(v)
             for f, v in inputs.items()
         }
-        self._results = self._results | parsed_input  # type: ignore
+        self._inputs = self._inputs | parsed_input  # type: ignore
         return self
 
     def input_batch(self, inputs: pd.DataFrame) -> Self:
-        self.input({self.features[k]: None for k in inputs.columns.to_list()})
-        self._batch = md.DataFrame(inputs)
+        self._inputs = {
+            str(col): ResultSuccess(md.Series(inputs[col])) for col in inputs.columns
+        }
         return self
 
     async def resolve_batch(self, features: Sequence[AnyFeature]) -> md.DataFrame:
-        await self.resolve_many(features)
-        return self._batch
+        results = await asyncio.gather(*[self.resolve(f) for f in features])
+        return md.DataFrame({f.name: results[i] for i, f in enumerate(features)})
 
     async def resolve_many(self, features: Sequence[AnyFeature]) -> dict[str, Any]:
         results = await asyncio.gather(*[self.resolve(f) for f in features])
@@ -74,7 +74,7 @@ class Resolution:
         return result.value
 
     async def safe_resolve(self, feature: BaseFeature[T]) -> FeatureResult[T]:
-        if result := self._results.get(feature.name):
+        if result := self._inputs.get(feature.name):
             return result
 
         if not self._tasks.get(feature):
@@ -88,35 +88,30 @@ class Resolution:
     ) -> FeatureResult[T]:
         try:
             if isinstance(feature, BatchSource):
-                self._batch = await self._batch_source_resolver(feature)
-                return cast(Any, ResultSuccess(None))
+                result = await self._batch_source_resolver(feature)
+                return cast(Any, ResultSuccess(result))
 
             if isinstance(feature, BatchFeature):
-                self._batch = await self._batch_feature_resolver(feature)
-                return cast(Any, ResultSuccess(None))
+                result = await self._batch_feature_resolver(feature)
+                return cast(Any, ResultSuccess(result))
 
             if isinstance(feature, BatchRowFeature):
-                self._batch = await self._batch_row_resolver(feature)
-                return cast(Any, ResultSuccess(None))
+                result = await self._batch_row_resolver(feature)
+                return cast(Any, ResultSuccess(result))
 
             if isinstance(feature, BaseFeature):
-                result = await self._instance_resolver(feature)
-                self._results[feature.name] = result
+                result = ResultSuccess(await self._instance_resolver(feature))
                 return result
 
         except Exception as err:
             result = ResultFailure(err)
-            self._results[feature.name] = result
             return result
 
-    async def _batch_source_resolver(self, feature: BatchSource) -> md.DataFrame:
-        instance, batch = self._get_partitioned_features(feature.args_names)
-        instance_kwargs = await self.resolve_many(instance)
-        await self.resolve_many(batch)
+    async def _batch_source_resolver(self, feature: BatchSource) -> md.Series:
+        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
+        result = md.Series()
 
-        result: md.Series = md.Series()
-
-        async for df in feature.resolver(**instance_kwargs):
+        async for df in feature.resolver(**kwargs):
             result = md.concat([md.Series(df), result])
 
         if result.empty:
@@ -124,63 +119,35 @@ class Resolution:
                 f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
             )
 
-        if self._batch is not None:
-            self._batch[feature.name] = result
-        else:
-            self._batch = md.DataFrame({feature.name: result})
+        return result
 
-        return self._batch
-
-    async def _batch_row_resolver(self, feature: BatchRowFeature) -> md.DataFrame:
-        instance, batch = self._get_partitioned_features(feature.args_names)
-        instance_kwargs = await self.resolve_many(instance)
-        await self.resolve_many(batch)
-        feature_names = tuple(f.name for f in batch)
+    async def _batch_row_resolver(self, feature: BatchRowFeature) -> md.Series:
+        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
+        batch_features_names = [
+            name for name, v in kwargs.items() if isinstance(v, md.Series)
+        ]
+        instance_kwargs = {
+            name: v for name, v in kwargs.items() if not isinstance(v, md.Series)
+        }
+        frame = md.DataFrame(
+            {name: v for name, v in kwargs.items() if isinstance(v, md.Series)}
+        )
 
         def _row_wrapped_resolver(row):
-            kwargs = {f_name: row[f_name] for f_name in feature_names} | instance_kwargs
+            kwargs = {
+                f_name: row[f_name] for f_name in batch_features_names
+            } | instance_kwargs
             return feature.resolver(**kwargs)
 
-        result = self._batch.apply(_row_wrapped_resolver, axis=1)
-        self._batch[feature.name] = result
-        return self._batch
+        return cast(md.Series, frame.apply(_row_wrapped_resolver, axis=1))
 
-    async def _batch_feature_resolver(self, feature: BatchFeature) -> md.DataFrame:
-        instance, batch = self._get_partitioned_features(feature.args_names)
-        instance_kwargs = await self.resolve_many(instance)
-        await self.resolve_many(batch)
+    async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
+        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
+        return cast(md.Series, await maybe_await(feature.resolver(**kwargs)))
 
-        data = self._batch
-        feature_names = tuple(f.name for f in batch)
-
-        kwargs = {f_name: data[f_name] for f_name in feature_names} | instance_kwargs
-        data[feature.name] = feature.resolver(**kwargs)
-        return data
-
-    async def _instance_resolver(self, feature: BaseFeature) -> FeatureResult:
-        instance, _ = self._get_partitioned_features(feature.args_names)
-        fn_kwargs = await self.resolve_many(instance)
-        task = maybe_await(feature.resolver(**fn_kwargs))
-        return ResultSuccess(await task)
-
-    def _get_partitioned_features(
-        self, feature_names: list[str]
-    ) -> tuple[Sequence[BaseFeature], Sequence[BatchFeature | BatchRowFeature]]:
-        features = [self.features[name] for name in feature_names]
-
-        batch = [
-            f
-            for f in features
-            if isinstance(f, BatchFeature) or isinstance(f, BatchRowFeature)
-        ]
-
-        instance = [
-            f
-            for f in features
-            if not isinstance(f, BatchFeature) and not isinstance(f, BatchRowFeature)
-        ]
-
-        return instance, batch
+    async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
+        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
+        return await maybe_await(feature.resolver(**kwargs))
 
 
 class Figo:

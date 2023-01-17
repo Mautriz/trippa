@@ -36,7 +36,6 @@ async def test_batch_calculation(figo: Figo):
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
     result = await figo.start().input_batch(inputs).resolve_batch([other_feature])
 
-    assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
     assert result["other_feature"].to_list() == [
         "rotondorotondo",
         "marcomarco",
@@ -49,7 +48,6 @@ async def test_batch_row_calculation(figo: Figo):
     inputs = pd.DataFrame({"uuids": ["rotondo", "marco", "franco"]})
     result = await figo.start().input_batch(inputs).resolve_batch([other_row_feature])
 
-    assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
     assert result["other_row_feature"].to_list() == [
         "roberto rotondo",
         "roberto marco",

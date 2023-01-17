@@ -1,3 +1,4 @@
+from asyncio import sleep
 from datetime import datetime
 from typing import AsyncIterable
 
@@ -13,7 +14,8 @@ def uuids() -> pd.Series:
 
 
 @batch_feature()
-def other_feature(uuids: pd.Series) -> pd.Series:
+async def other_feature(uuids: pd.Series) -> pd.Series:
+    await sleep(0.2)
     return uuids + uuids
 
 
