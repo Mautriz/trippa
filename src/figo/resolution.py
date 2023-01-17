@@ -19,7 +19,7 @@ from utils.types import T
 from .base import AnyFeature, BaseFeature
 from .results import FeatureResult, ResultFailure, ResultSuccess
 
-ray.init(
+ray.init(  # type: ignore
     runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
     ignore_reinit_error=True,
 )
@@ -30,7 +30,7 @@ logger = getLogger(__name__)
 @dataclass
 class Resolution:
     features: dict[str, AnyFeature]
-    _batch: md.DataFrame = field(init=False, default=None)
+    _batch: md.DataFrame = field(init=False, default=None)  # type: ignore
     _results: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
