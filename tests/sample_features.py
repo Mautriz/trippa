@@ -29,3 +29,12 @@ async def first(ctx: Info) -> str:
 @feature()
 async def ciao(ctx: Info) -> str:
     return await ctx.resolve(first) + "ciao"
+
+
+@feature()
+async def second(ctx: Info) -> str:
+    if 0 == 1:
+        await ctx.resolve(ciao)
+    if True:
+        await ctx.resolve(first)
+    return "first" + await ctx.resolve(uuid)

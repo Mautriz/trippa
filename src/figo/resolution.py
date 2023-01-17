@@ -9,6 +9,7 @@ import modin.pandas as md
 import pandas as pd
 import ray
 from typing_extensions import Self
+from figo.dag_solver import find_deps
 
 from figo.tasks import EntityTasks
 from figo.variants import BatchFeature, BatchGenerator
@@ -25,7 +26,7 @@ FRAME = "frame"
 
 @dataclass
 class Resolution:
-    # features: dict[str, AnyFeature]
+    features: dict[str, AnyFeature]
     ctx: Any
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
@@ -130,6 +131,9 @@ class Figo:
     def __init__(self, features: Sequence[AnyFeature]) -> None:
         self.features = {f.name: f for f in features}
 
+    def find_deps(self, feature: AnyFeature) -> set[AnyFeature]:
+        return find_deps(feature, self.features)
+
     @classmethod
     def from_modules(cls, modules: list[Any]) -> Self:
         return cls(cls._get_features_from_modules(modules))
@@ -148,4 +152,4 @@ class Figo:
             runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
             ignore_reinit_error=True,
         )
-        return Resolution(ctx)
+        return Resolution(self.features, ctx)
