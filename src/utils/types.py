@@ -7,6 +7,7 @@ from types import UnionType
 from typing import Any, Optional, Tuple, Type, TypeGuard, TypeVar, Union
 
 T = TypeVar("T", bound=Any)
+T1 = TypeVar("T1", bound=Any)
 V = TypeVar("V", bound=Any)
 
 AnyType = type | UnionType

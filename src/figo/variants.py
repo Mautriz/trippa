@@ -1,22 +1,18 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, Awaitable, Callable
+from typing import Any, AsyncIterable, Awaitable, Callable
 
 import pandas as pd
 
-from figo.base import BaseFeature
-
-
-class Feature(BaseFeature):
-    ...
+from figo.base import BaseFeature, Info
 
 
 class BatchFeature(BaseFeature[pd.Series]):
-    resolver: Callable[..., pd.Series] | Callable[..., Awaitable[pd.Series]]
+    resolver: Callable[[Info[Any]], Awaitable[pd.Series]]
 
 
 @dataclass
 class BatchGenerator(BaseFeature):
-    resolver: Callable[..., AsyncIterable[pd.Series]]
+    resolver: Callable[[Info[Any]], AsyncIterable[pd.Series]]
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -25,13 +21,13 @@ class BatchGenerator(BaseFeature):
 @dataclass
 class batch_generator:
     def __call__(
-        self, resolver: Callable[..., AsyncIterable[pd.Series]]
+        self, resolver: Callable[[Info[Any]], AsyncIterable[pd.Series]]
     ) -> BatchGenerator:
         return BatchGenerator(resolver.__name__, resolver=resolver)
 
 
 class batch_feature:
     def __call__(
-        self, resolver: Callable[..., pd.Series] | Callable[..., Awaitable[pd.Series]]
+        self, resolver: Callable[[Info[Any]], Awaitable[pd.Series]]
     ) -> BatchFeature:
         return BatchFeature(name=resolver.__name__, resolver=resolver)

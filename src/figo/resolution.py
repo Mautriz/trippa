@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from logging import getLogger
-from re import S
 from typing import Any, ClassVar, Mapping, Sequence, Type, cast
 
 import modin.pandas as md
@@ -11,19 +10,13 @@ import pandas as pd
 import ray
 from typing_extensions import Self
 
-from figo.errors import UnknownFeature
 from figo.tasks import EntityTasks
 from figo.variants import BatchFeature, BatchGenerator
 from utils.asyncio import maybe_await
 from utils.types import T
 
-from .base import AnyFeature, BaseFeature
+from .base import AnyFeature, BaseFeature, Info
 from .results import FeatureResult, ResultFailure, ResultSuccess
-
-ray.init(  # type: ignore
-    runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
-    ignore_reinit_error=True,
-)
 
 logger = getLogger(__name__)
 
@@ -32,7 +25,8 @@ FRAME = "frame"
 
 @dataclass
 class Resolution:
-    features: dict[str, AnyFeature]
+    # features: dict[str, AnyFeature]
+    ctx: Any
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -107,18 +101,15 @@ class Resolution:
             return result
 
     async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
-        kwargs = await self.resolve_args(feature)
-        return cast(md.Series, await maybe_await(feature.resolver(**kwargs)))
+        return cast(md.Series, await maybe_await(feature.resolver(self.info())))
 
     async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
-        kwargs = await self.resolve_args(feature)
-        return await maybe_await(feature.resolver(**kwargs))
+        return await maybe_await(feature.resolver(self.info()))
 
     async def _batch_generator_resolver(self, feature: BatchGenerator) -> md.Series:
-        kwargs = await self.resolve_args(feature)
         result = md.Series()
 
-        async for df in feature.resolver(**kwargs):
+        async for df in feature.resolver(self.info()):
             result = md.concat([md.Series(df), result])
 
         if result.empty:
@@ -127,25 +118,8 @@ class Resolution:
             )
         return result
 
-    async def resolve_args(self, feature: BaseFeature):
-        SPECIAL_KEYWORDS = [FRAME]
-        normal_args = [f for f in feature.args_names if f not in SPECIAL_KEYWORDS]
-        special_args = [f for f in feature.args_names if f in SPECIAL_KEYWORDS]
-
-        await self.resolve_many([self.features[f] for f in feature.additional_deps])
-        kwargs = await self.resolve_many([self.features[f] for f in normal_args])
-
-        if FRAME in special_args:
-            batch_features = [
-                self.features[f]
-                for f in normal_args
-                if isinstance(self.features[f], BatchFeature)
-            ]
-            kwargs[FRAME] = md.DataFrame(
-                {feat.name: kwargs[feat.name] for feat in batch_features}
-            )
-
-        return kwargs
+    def info(self) -> Info[Any]:
+        return Info(self.ctx, self.resolve)
 
 
 class Figo:
@@ -155,12 +129,6 @@ class Figo:
 
     def __init__(self, features: Sequence[AnyFeature]) -> None:
         self.features = {f.name: f for f in features}
-
-        # Safe checks
-        for f in features:
-            for dep in f.args_names:
-                if dep not in self.features:
-                    raise UnknownFeature(f.name, dep)
 
     @classmethod
     def from_modules(cls, modules: list[Any]) -> Self:
@@ -175,5 +143,9 @@ class Figo:
             if isinstance(feature, BaseFeature)
         ]
 
-    def start(self) -> Resolution:
-        return Resolution(self.features)
+    def start(self, ctx: Any = None) -> Resolution:
+        ray.init(  # type: ignore
+            runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
+            ignore_reinit_error=True,
+        )
+        return Resolution(ctx)

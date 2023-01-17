@@ -31,12 +31,6 @@ async def test_input_as_feature(
 
 
 @pytest.mark.asyncio
-async def test_dependencies_compatibility() -> None:
-    with pytest.raises(UnknownFeature):
-        Figo([using_missing_input])
-
-
-@pytest.mark.asyncio
 async def test_resolve_many(
     figo: Figo,
 ) -> None:

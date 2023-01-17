@@ -6,31 +6,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Awaitable, Callable, overload
+from typing import Any, Awaitable, Callable
 
 from figo.errors import MissingInputException
 from utils.types import T
 
-from .base import AnyFeature, BaseFeature
+from .base import AnyFeature, BaseFeature, Info
 
 
 @dataclass(frozen=True)
 class feature:
-    @overload
     def __call__(
         self,
-        resolver: Callable[..., Awaitable[T]],
+        resolver: Callable[[Info[Any]], Awaitable[T]],
     ) -> BaseFeature[T]:
-        ...
-
-    @overload
-    def __call__(self, resolver: Callable[..., T]) -> BaseFeature[T]:
-        ...
-
-    def __call__(
-        self,
-        resolver: Callable[..., Any],
-    ) -> BaseFeature[Any]:
         return BaseFeature[T](name=resolver.__name__, resolver=resolver)
 
 
@@ -48,7 +37,7 @@ class input_feature:
     ) -> BaseFeature[T]:
         feature_name = resolver.__name__
 
-        def raiser() -> T:
+        def raiser(ctx: Info[Any]) -> T:
             if self.default_value != RaiseOnMissing.TOKEN:
                 return self.default_value
             raise MissingInputException(feature_name)
@@ -59,16 +48,10 @@ class input_feature:
         )
 
 
-@dataclass
-class feature_group:
-    feature_names: list[str]
-
-    def __call__(self, resolver: Callable[..., Any]) -> list[AnyFeature]:
-        return [
-            self._create_feature(resolver, feature) for feature in self.feature_names
-        ]
-
-    @staticmethod
-    def _create_feature(resolver: Callable[..., Any], feature_name: str) -> AnyFeature:
-        # resolver
-        ...
+@dataclass(frozen=True)
+class source:
+    def __call__(
+        self,
+        resolver: Callable[[Info[Any]], Awaitable[T]],
+    ) -> BaseFeature[T]:
+        return BaseFeature[T](name=resolver.__name__, resolver=resolver)

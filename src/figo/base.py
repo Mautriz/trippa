@@ -5,13 +5,22 @@ import inspect
 from functools import cached_property
 from typing import Any, Awaitable, Callable, Generic
 
-from utils.types import T
+from utils.types import T, V
+
+
+class Info(Generic[V]):
+    def __init__(self, ctx: V, resolve: Callable[[AnyFeature], Awaitable[Any]]) -> None:
+        self.ctx = ctx
+        self._resolve = resolve
+
+    async def resolve(self, feature: BaseFeature[T]) -> T:
+        return await self._resolve(feature)
 
 
 @dataclasses.dataclass
 class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
     name: str
-    resolver: Callable[..., Awaitable[T] | T]
+    resolver: Callable[[Info[Any]], Awaitable[T] | T]
     additional_deps: list[str] = dataclasses.field(default_factory=list)
 
     def __hash__(self) -> int:

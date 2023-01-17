@@ -1,4 +1,5 @@
 from figo import feature
+from figo.base import Info
 from figo.decorator import input_feature
 
 
@@ -15,16 +16,16 @@ def missing_input() -> int:
 
 
 @feature()
-def using_missing_input(missing_input: int) -> int:
+async def using_missing_input(ctx: Info) -> int:
     """uuid of the entity"""
-    return missing_input
+    return await ctx.resolve(missing_input)
 
 
 @feature()
-def first(uuid: str) -> str:
-    return "first" + uuid
+async def first(ctx: Info) -> str:
+    return "first" + await ctx.resolve(uuid)
 
 
 @feature()
-async def ciao(first: str) -> str:
-    return first + "ciao"
+async def ciao(ctx: Info) -> str:
+    return await ctx.resolve(first) + "ciao"
