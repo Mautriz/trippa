@@ -12,6 +12,7 @@ from utils.types import T
 class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
     name: str
     resolver: Callable[..., Awaitable[T] | T]
+    additional_deps: list[str] = dataclasses.field(default_factory=list)
 
     def __hash__(self) -> int:
         return self.name.__hash__()

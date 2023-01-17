@@ -5,7 +5,7 @@ from typing import AsyncIterable
 import pandas as pd
 
 from figo.decorator import input_feature
-from figo.variants import batch_feature, batch_row_feature, batch_source
+from figo.variants import batch_feature, batch_generator
 
 
 @batch_feature()
@@ -17,11 +17,6 @@ def uuids() -> pd.Series:
 async def other_feature(uuids: pd.Series) -> pd.Series:
     await sleep(0.2)
     return uuids + uuids
-
-
-@batch_row_feature()
-def other_row_feature(uuids: str) -> str:
-    return f"roberto {uuids}"
 
 
 # test 2
@@ -37,7 +32,7 @@ def end_date() -> datetime:
     ...
 
 
-@batch_source()
+@batch_generator()
 async def date_series(
     start_date: datetime, end_date: datetime
 ) -> AsyncIterable[pd.Series]:

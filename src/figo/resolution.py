@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from logging import getLogger
+from re import S
 from typing import Any, ClassVar, Mapping, Sequence, Type, cast
 
 import modin.pandas as md
@@ -12,7 +13,7 @@ from typing_extensions import Self
 
 from figo.errors import UnknownFeature
 from figo.tasks import EntityTasks
-from figo.variants import BatchFeature, BatchRowFeature, BatchSource
+from figo.variants import BatchFeature, BatchGenerator
 from utils.asyncio import maybe_await
 from utils.types import T
 
@@ -25,6 +26,8 @@ ray.init(  # type: ignore
 )
 
 logger = getLogger(__name__)
+
+FRAME = "frame"
 
 
 @dataclass
@@ -87,16 +90,12 @@ class Resolution:
         feature: BaseFeature[T],
     ) -> FeatureResult[T]:
         try:
-            if isinstance(feature, BatchSource):
-                result = await self._batch_source_resolver(feature)
+            if isinstance(feature, BatchGenerator):
+                result = await self._batch_generator_resolver(feature)
                 return cast(Any, ResultSuccess(result))
 
             if isinstance(feature, BatchFeature):
                 result = await self._batch_feature_resolver(feature)
-                return cast(Any, ResultSuccess(result))
-
-            if isinstance(feature, BatchRowFeature):
-                result = await self._batch_row_resolver(feature)
                 return cast(Any, ResultSuccess(result))
 
             if isinstance(feature, BaseFeature):
@@ -107,8 +106,16 @@ class Resolution:
             result = ResultFailure(err)
             return result
 
-    async def _batch_source_resolver(self, feature: BatchSource) -> md.Series:
-        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
+    async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
+        kwargs = await self.resolve_args(feature)
+        return cast(md.Series, await maybe_await(feature.resolver(**kwargs)))
+
+    async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
+        kwargs = await self.resolve_args(feature)
+        return await maybe_await(feature.resolver(**kwargs))
+
+    async def _batch_generator_resolver(self, feature: BatchGenerator) -> md.Series:
+        kwargs = await self.resolve_args(feature)
         result = md.Series()
 
         async for df in feature.resolver(**kwargs):
@@ -118,36 +125,27 @@ class Resolution:
             raise Exception(
                 f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
             )
-
         return result
 
-    async def _batch_row_resolver(self, feature: BatchRowFeature) -> md.Series:
-        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
-        batch_features_names = [
-            name for name, v in kwargs.items() if isinstance(v, md.Series)
-        ]
-        instance_kwargs = {
-            name: v for name, v in kwargs.items() if not isinstance(v, md.Series)
-        }
-        frame = md.DataFrame(
-            {name: v for name, v in kwargs.items() if isinstance(v, md.Series)}
-        )
+    async def resolve_args(self, feature: BaseFeature):
+        SPECIAL_KEYWORDS = [FRAME]
+        normal_args = [f for f in feature.args_names if f not in SPECIAL_KEYWORDS]
+        special_args = [f for f in feature.args_names if f in SPECIAL_KEYWORDS]
 
-        def _row_wrapped_resolver(row):
-            kwargs = {
-                f_name: row[f_name] for f_name in batch_features_names
-            } | instance_kwargs
-            return feature.resolver(**kwargs)
+        await self.resolve_many([self.features[f] for f in feature.additional_deps])
+        kwargs = await self.resolve_many([self.features[f] for f in normal_args])
 
-        return cast(md.Series, frame.apply(_row_wrapped_resolver, axis=1))
+        if FRAME in special_args:
+            batch_features = [
+                self.features[f]
+                for f in normal_args
+                if isinstance(self.features[f], BatchFeature)
+            ]
+            kwargs[FRAME] = md.DataFrame(
+                {feat.name: kwargs[feat.name] for feat in batch_features}
+            )
 
-    async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
-        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
-        return cast(md.Series, await maybe_await(feature.resolver(**kwargs)))
-
-    async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
-        kwargs = await self.resolve_many([self.features[f] for f in feature.args_names])
-        return await maybe_await(feature.resolver(**kwargs))
+        return kwargs
 
 
 class Figo:
