@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Mapping, Sequence, Type, cast
 
 import modin.pandas as md
 import pandas as pd
+import ray
 from typing_extensions import Self
 
 from figo.errors import UnknownFeature
@@ -18,13 +19,18 @@ from utils.types import T
 from .base import AnyFeature, BaseFeature
 from .results import FeatureResult, ResultFailure, ResultSuccess
 
+ray.init(
+    runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
+    ignore_reinit_error=True,
+)
+
 logger = getLogger(__name__)
 
 
 @dataclass
 class Resolution:
     features: dict[str, AnyFeature]
-    _batch: md.DataFrame = field(default_factory=md.DataFrame)
+    _batch: md.DataFrame = field(init=False, default=None)
     _results: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -118,10 +124,11 @@ class Resolution:
                 f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
             )
 
-        if self._batch is None:
-            self._batch = md.DataFrame()
+        if self._batch is not None:
+            self._batch[feature.name] = result
+        else:
+            self._batch = md.DataFrame({feature.name: result})
 
-        self._batch[feature.name] = result
         return self._batch
 
     async def _batch_row_resolver(self, feature: BatchRowFeature) -> md.DataFrame:
