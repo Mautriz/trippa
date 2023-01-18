@@ -5,7 +5,7 @@ from typing import AsyncIterable
 import pandas as pd
 
 from figo.base import Info
-from figo.decorator import input_feature
+from figo.decorator import feature, input_feature
 from figo.variants import batch_feature, batch_generator
 
 
@@ -38,3 +38,9 @@ def end_date() -> datetime:
 async def date_series(ctx: Info) -> AsyncIterable[pd.Series]:
     start_date_, end_date_ = await ctx.resolve(start_date), await ctx.resolve(end_date)
     yield pd.date_range(start_date_, end_date_).to_series()
+
+
+@feature()
+async def aggregate_feature(ctx: Info) -> int:
+    frame = await ctx.frame([date_series])
+    return frame["date_series"].count()

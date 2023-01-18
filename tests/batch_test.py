@@ -6,7 +6,14 @@ import pytest
 
 from figo.base import AnyFeature
 from figo.resolution import Figo
-from tests.batch_features import date_series, end_date, other_feature, start_date, uuids
+from tests.batch_features import (
+    aggregate_feature,
+    date_series,
+    end_date,
+    other_feature,
+    start_date,
+    uuids,
+)
 
 
 @pytest.mark.asyncio
@@ -43,3 +50,18 @@ async def test_batch_input(figo: Figo):
     result = await figo.start().input_batch(inputs).resolve_batch([uuids])
 
     assert result["uuids"].to_list() == ["rotondo", "marco", "franco"]
+
+
+@pytest.mark.asyncio
+async def test_aggregate_function(figo: Figo):
+    start = datetime(2000, 1, 1)
+    end = datetime(2000, 1, 15)
+
+    inputs: Mapping[AnyFeature, Any] = {
+        start_date: start,
+        end_date: end,
+    }
+
+    result = await figo.start().input(inputs).resolve(aggregate_feature)
+
+    assert result == 15

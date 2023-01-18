@@ -13,7 +13,6 @@ from figo.dag_solver import find_deps
 
 from figo.tasks import EntityTasks
 from figo.variants import BatchFeature, BatchGenerator
-from utils.asyncio import maybe_await
 from utils.types import T
 
 from .base import AnyFeature, BaseFeature, Info
@@ -28,6 +27,7 @@ FRAME = "frame"
 class Resolution:
     features: dict[str, AnyFeature]
     ctx: Any
+    _frame: md.DataFrame = field(default=None)  # type: ignore
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -102,10 +102,12 @@ class Resolution:
             return result
 
     async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
-        return cast(md.Series, await maybe_await(feature.resolver(self.info())))
+        result = cast(md.Series, await feature.resolver(self.info()))
+        self.frame_add_column(feature.name, result)
+        return result
 
     async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
-        return await maybe_await(feature.resolver(self.info()))
+        return await feature.resolver(self.info())
 
     async def _batch_generator_resolver(self, feature: BatchGenerator) -> md.Series:
         result = md.Series()
@@ -117,10 +119,19 @@ class Resolution:
             raise Exception(
                 f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
             )
+        self.frame_add_column(feature.name, result)
         return result
 
     def info(self) -> Info[Any]:
-        return Info(self.ctx, self.resolve)
+        return Info(self.ctx, self.resolve, self.frame)
+
+    def frame(self) -> md.DataFrame:
+        return self._frame
+
+    def frame_add_column(self, name: str, col: md.Series) -> None:
+        if self._frame is None:
+            self._frame = md.DataFrame({name: col})
+        self._frame[name] = col
 
 
 class Figo:

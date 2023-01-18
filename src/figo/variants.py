@@ -4,6 +4,7 @@ from typing import Any, AsyncIterable, Awaitable, Callable
 import pandas as pd
 
 from figo.base import BaseFeature, Info
+import modin.pandas as md
 
 
 class BatchFeature(BaseFeature[pd.Series]):
@@ -31,3 +32,15 @@ class batch_feature:
         self, resolver: Callable[[Info[Any]], Awaitable[pd.Series]]
     ) -> BatchFeature:
         return BatchFeature(name=resolver.__name__, resolver=resolver)
+
+
+def create_sql_feature(query: str) -> BaseFeature[md.DataFrame]:
+    return md.read_csv(query)
+
+
+def create_csv_feature(path: str) -> BaseFeature[md.DataFrame]:
+    return md.read_csv(path)
+
+
+def create_parquet_feature(path: str) -> BaseFeature[md.DataFrame]:
+    return md.read_parquet(path)

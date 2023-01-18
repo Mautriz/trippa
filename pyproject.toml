@@ -8,7 +8,6 @@ version = "0.1.0"
 python = "^3.10"
 
 [tool.poetry.group.batch.dependencies]
-connectorx = "^0.3.1"
 modin = {extras = ["ray"], version = "^0.18.0"}
 pandas = "^1.5.2"
 
