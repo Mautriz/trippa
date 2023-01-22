@@ -18,6 +18,12 @@ mypy = "*"
 pytest = "*"
 pytest-asyncio = "*"
 ruff = "*"
+httpx = "^0.23.3"
+
+
+[tool.poetry.group.web.dependencies]
+fastapi = {extras = ["standard"], version = "^0.89.1"}
+uvicorn = "^0.20.0"
 
 [tool.black]
 line-length = 88

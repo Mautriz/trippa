@@ -145,6 +145,12 @@ class Figo:
     def find_deps(self, feature: AnyFeature) -> set[AnyFeature]:
         return find_deps(feature, self.features)
 
+    def remove_features(self, features: Sequence[AnyFeature]) -> None:
+        self.features = {k: v for k, v in self.features.items() if v not in features}
+
+    def upsert_features(self, features: Sequence[AnyFeature]) -> None:
+        self.features |= {f.name: f for f in features}
+
     @classmethod
     def from_modules(cls, modules: list[Any]) -> Self:
         return cls(cls._get_features_from_modules(modules))

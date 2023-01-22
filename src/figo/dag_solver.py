@@ -40,6 +40,12 @@ class AliasVisitor(NodeVisitor):
                 self.alias_to_original[name] = asname
 
 
+def find_deps_string(source_function: str) -> set[str]:
+    dependency_visitor = DependencyVisitor()
+    dependency_visitor.visit(ast.parse(source_function))
+    return dependency_visitor.dependencies
+
+
 def find_deps(
     feature: AnyFeature, available_features: dict[str, AnyFeature]
 ) -> set[AnyFeature]:
@@ -56,10 +62,9 @@ def find_deps(
     alias_visitor = AliasVisitor()
     alias_visitor.visit(source_ast)
 
-    dependency_visitor = DependencyVisitor()
-    dependency_visitor.visit(ast.parse(source_function))
+    dependencies = find_deps_string(source_function)
 
-    for feature_alias in dependency_visitor.dependencies:
+    for feature_alias in dependencies:
         original_name = alias_visitor.alias_to_original.get(
             feature_alias, feature_alias
         )
