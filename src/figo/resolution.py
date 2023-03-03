@@ -27,7 +27,7 @@ FRAME = "frame"
 class Resolution:
     features: dict[str, AnyFeature]
     ctx: Any
-    _frame: md.DataFrame = field(default=None)  # type: ignore
+    _frame: md.DataFrame | None = field(default=None)
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -37,7 +37,7 @@ class Resolution:
             f.name if isinstance(f, BaseFeature) else f: ResultSuccess(v)
             for f, v in inputs.items()
         }
-        self._inputs = self._inputs | parsed_input  # type: ignore
+        self._inputs = self._inputs | parsed_input
         return self
 
     def input_batch(self, inputs: pd.DataFrame) -> Self:
@@ -126,11 +126,15 @@ class Resolution:
         return Info(self.ctx, self.resolve, self.frame)
 
     def frame(self) -> md.DataFrame:
+        if not self._frame:
+            self._frame = md.DataFrame()
+
         return self._frame
 
     def frame_add_column(self, name: str, col: md.Series) -> None:
         if self._frame is None:
             self._frame = md.DataFrame({name: col})
+            return
         self._frame[name] = col
 
 
