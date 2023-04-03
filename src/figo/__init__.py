@@ -1,3 +1,32 @@
+"""
+Documentation for figostore
+
+# Creating features
+
+Wow
+
+
+## Fare cose
+
+Importare
+
+
+## Importare cose
+
+## Scoppiarle
+
+## Debuggarle
+
+# Non fare piú niente
+
+
+`.base.Info`
+
+- One
+- Two
+- Three
+"""
+
 from .base import AnyFeature as AnyFeature
 from .base import BaseFeature as BaseFeature
 from .decorator import feature as feature

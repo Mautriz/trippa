@@ -18,6 +18,7 @@ mypy = "*"
 pytest = "*"
 pytest-asyncio = "*"
 ruff = "*"
+pdoc = "^13.1.0"
 
 [tool.black]
 line-length = 88
