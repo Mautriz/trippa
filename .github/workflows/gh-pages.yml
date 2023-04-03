@@ -20,10 +20,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - run: pip install pdoc
+      - run: pip install poetry
       # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
-      - run: pdoc -o docs src/figo
-
+      - run: make install
+      - run: poetry run pdoc -o docs src/figo
       - uses: actions/upload-pages-artifact@v1
         with:
           path: docs/
