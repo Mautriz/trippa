@@ -3,7 +3,6 @@
 __pycache__
 
 # IDE
-.devcontainer
 .idea
 **/.DS_Store
 .vscode/
