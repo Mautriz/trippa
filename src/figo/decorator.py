@@ -11,7 +11,7 @@ from typing import Any, Awaitable, Callable
 from figo.errors import MissingInputException
 from utils.types import T
 
-from .base import AnyFeature, BaseFeature, Info
+from .base import BaseFeature, Info
 
 
 @dataclass(frozen=True)

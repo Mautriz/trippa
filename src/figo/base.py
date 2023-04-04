@@ -1,11 +1,13 @@
 from __future__ import annotations
-import asyncio
 
+import asyncio
 import dataclasses
 import inspect
 from functools import cached_property
 from typing import Any, Awaitable, Callable, Generic, Sequence
+
 import modin.pandas as md
+
 from utils.types import T, V
 
 
@@ -48,13 +50,6 @@ class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
     @cached_property
     def description(self) -> str:
         return (self.resolver.__doc__ or "").strip()
-
-    # @cached_property
-    # def type(self) -> Type[T]:
-    #     return cast(
-    #         Type[T],
-    #         self._signature.return_annotation,
-    #     )
 
     @cached_property
     def _signature(self) -> inspect.Signature:

@@ -1,7 +1,7 @@
 import pytest
 
 from figo import Figo
-from figo.errors import MissingInputException, UnknownFeature
+from figo.errors import MissingInputException
 from figo.results import ResultFailure, ResultSuccess
 from tests.sample_features import ciao, first, missing_input, using_missing_input, uuid
 

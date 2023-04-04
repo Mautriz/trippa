@@ -9,8 +9,8 @@ import modin.pandas as md
 import pandas as pd
 import ray
 from typing_extensions import Self
-from figo.dag_solver import find_deps
 
+from figo.dag_solver import find_deps
 from figo.tasks import EntityTasks
 from figo.variants import BatchFeature, BatchGenerator
 from utils.types import T

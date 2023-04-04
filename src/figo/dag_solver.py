@@ -1,9 +1,10 @@
-from ast import Attribute, Call, ImportFrom, Load, Module, Name, NodeVisitor, alias
 import ast
+from ast import Attribute, Call, ImportFrom, Load, Module, Name, NodeVisitor, alias
 from functools import lru_cache
 from inspect import getsource, getsourcefile
 from pathlib import Path
 from typing import Any
+
 from .base import AnyFeature
 
 
@@ -18,7 +19,7 @@ class DependencyVisitor(NodeVisitor):
         self.dependencies = set[str]()
 
     def visit_Call(self, node: Call) -> Any:
-        match node:
+        match node:  # noqa
             case Call(
                 func=Attribute(
                     value=Name(id="ctx", ctx=Load()), attr="resolve", ctx=Load()
@@ -33,7 +34,7 @@ class AliasVisitor(NodeVisitor):
         self.alias_to_original = dict[str, str]()
 
     def visit_ImportFrom(self, node: ImportFrom) -> Any:
-        match node:
+        match node:  # noqa
             case ImportFrom(
                 names=[alias(name=name, asname=str(asname))],
             ):

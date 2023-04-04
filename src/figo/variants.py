@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, AsyncIterable, Awaitable, Callable
 
+import modin.pandas as md
 import pandas as pd
 
 from figo.base import BaseFeature, Info
-import modin.pandas as md
 
 
 class BatchFeature(BaseFeature[pd.Series]):
