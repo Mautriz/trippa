@@ -1,4 +1,4 @@
-name: website
+name: Github Pages
 
 # build the documentation whenever there are new commits on main
 on:
