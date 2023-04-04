@@ -3,7 +3,7 @@ from ast import Attribute, Call, ImportFrom, Load, Module, Name, NodeVisitor, al
 from functools import lru_cache
 from inspect import getsource, getsourcefile
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from .base import AnyFeature
 
@@ -42,7 +42,7 @@ class AliasVisitor(NodeVisitor):
 
 
 def find_deps(
-    feature: AnyFeature, available_features: dict[str, AnyFeature]
+    feature: AnyFeature, available_features: Mapping[str, AnyFeature]
 ) -> set[AnyFeature]:
     final_deps = set[AnyFeature]()
 
@@ -50,7 +50,7 @@ def find_deps(
     source_function = getsource(feature.resolver)
 
     if not source_file:
-        raise Exception(f"No source file? Strange stuff.")
+        raise Exception("No source file? Strange stuff.")
 
     source_ast = get_source_file_ast(Path(source_file))
 

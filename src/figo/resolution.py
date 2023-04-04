@@ -7,8 +7,9 @@ from typing import Any, ClassVar, Mapping, Sequence, Type
 
 from typing_extensions import Self
 
-from figo.dag_solver import find_deps
+from figo.dependencies import find_deps
 from figo.tasks import EntityTasks
+from figo.utils.asyncio import maybe_await
 from figo.utils.types import T
 
 from .base import AnyFeature, BaseFeature, Info
@@ -16,12 +17,10 @@ from .results import FeatureResult, ResultFailure, ResultSuccess
 
 logger = getLogger(__name__)
 
-FRAME = "frame"
-
 
 @dataclass
 class Resolution:
-    features: dict[str, AnyFeature]
+    features: Mapping[str, AnyFeature]
     ctx: Any
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
@@ -32,7 +31,7 @@ class Resolution:
             f.name if isinstance(f, BaseFeature) else f: ResultSuccess(v)
             for f, v in inputs.items()
         }
-        self._inputs = self._inputs | parsed_input  # type: ignore
+        self._inputs = self._inputs | parsed_input
         return self
 
     async def resolve_many(self, features: Sequence[AnyFeature]) -> dict[str, Any]:
@@ -61,9 +60,7 @@ class Resolution:
             return result
 
         if not self._tasks.get(feature):
-            self._tasks[feature] = asyncio.create_task(
-                self._safe_resolve(feature)
-            )  # type: ignore
+            self._tasks[feature] = asyncio.create_task(self._safe_resolve(feature))
 
         return await self._tasks[feature]
 
@@ -77,7 +74,7 @@ class Resolution:
             return ResultFailure(err)
 
     async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
-        return await feature.resolver(self.info())
+        return await maybe_await(feature.resolver(self.info()))
 
     def info(self) -> Info[Any]:
         return Info(self.ctx, self.resolve)
@@ -86,7 +83,7 @@ class Resolution:
 class Figo:
     resolution_class: ClassVar[Type[Resolution]] = Resolution
 
-    features: dict[str, AnyFeature]
+    features: Mapping[str, AnyFeature]
 
     def __init__(self, features: Sequence[AnyFeature]) -> None:
         self.features = {f.name: f for f in features}

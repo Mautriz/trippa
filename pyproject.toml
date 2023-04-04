@@ -36,6 +36,7 @@ strict = true
 warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_ignores = true
+disable_error_code = 'type-arg, empty-body'
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

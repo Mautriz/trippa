@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, cast, overload
 
 from figo.errors import MissingInputException
 from figo.utils.types import T
@@ -19,11 +19,25 @@ class feature:
     meta: Any = None
     """Any metadata you want to add that might be eventually retrieved."""
 
+    @overload
     def __call__(
         self,
         resolver: Callable[[Info[Any]], Awaitable[T]],
     ) -> BaseFeature[T]:
-        return BaseFeature[T](name=resolver.__name__, resolver=resolver)
+        ...
+
+    @overload
+    def __call__(
+        self,
+        resolver: Callable[[Info[Any]], T],
+    ) -> BaseFeature[T]:
+        ...
+
+    def __call__(
+        self,
+        resolver: Callable[[Info[Any]], Any],
+    ) -> BaseFeature[Any]:
+        return BaseFeature[Any](name=resolver.__name__, resolver=resolver)
 
 
 class RaiseOnMissing(Enum):
@@ -42,7 +56,7 @@ class input_feature:
 
         def raiser(ctx: Info[Any]) -> T:
             if self.default_value != RaiseOnMissing.TOKEN:
-                return self.default_value
+                return cast(T, self.default_value)
             raise MissingInputException(feature_name)
 
         return BaseFeature[T](

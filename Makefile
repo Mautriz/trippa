@@ -31,7 +31,7 @@ lint: ## Launch the linting tool
 
 .PHONY: type-check
 type-check: ## Launch the type checking tool - currently skipped
-	# poetry run mypy $(CHECK_DIRS)
+	poetry run mypy $(CHECK_DIRS)
 
 .PHONY: test
 test: export APP_ENV = test

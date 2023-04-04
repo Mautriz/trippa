@@ -28,12 +28,13 @@ async def first(ctx: Info) -> str:
 
 @feature()
 async def ciao(ctx: Info) -> str:
-    return await ctx.resolve(first) + "ciao"
+    first_ = await ctx.resolve(first)
+    return f"{first_}ciao"
 
 
 @feature()
 async def second(ctx: Info) -> str:
-    if 0 == 1:
+    if 0 != 0:
         await ctx.resolve(ciao)
     if True:
         await ctx.resolve(first)

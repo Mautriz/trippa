@@ -15,7 +15,7 @@ class Info(Generic[V]):
         self.env: dict[str, str] = {}
 
     async def resolve(self, feature: BaseFeature[T]) -> T:
-        return await self._resolve(feature)
+        return await self._resolve(feature)  # type: ignore
 
 
 @dataclasses.dataclass
@@ -39,15 +39,15 @@ class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
         return (self.resolver.__doc__ or "").strip()
 
     @cached_property
-    def _signature(self) -> inspect.Signature:
-        return inspect.signature(self.resolver, eval_str=True)
-
-    @cached_property
     def type(self) -> Type[T]:
         return cast(
             Type[T],
             self._signature.return_annotation,
         )
+
+    @cached_property
+    def _signature(self) -> inspect.Signature:
+        return inspect.signature(self.resolver, eval_str=True)
 
 
 AnyFeature = BaseFeature[Any]
