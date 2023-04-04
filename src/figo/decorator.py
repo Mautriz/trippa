@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Awaitable, Callable, cast, overload
 
-from figo.errors import MissingInputException
+from figo.exceptions import MissingInputException
 from figo.utils.types import T
 
 from .base import BaseFeature, Info
@@ -16,6 +16,20 @@ from .base import BaseFeature, Info
 
 @dataclass(frozen=True)
 class feature:
+    """
+    Helper decorator to create feature definitions easily.
+
+    Wraps a function and creates a BaseFeature from it.
+
+    Ex:
+    ```python
+    @feature()
+    async def ciao(ctx: Info) -> str:
+        first_ = await ctx.resolve(first)
+        return f"{first_}ciao"
+    ```
+    """
+
     meta: Any = None
     """Any metadata you want to add that might be eventually retrieved."""
 

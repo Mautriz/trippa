@@ -1,7 +1,7 @@
 import pytest
 
 from figo import Figo
-from figo.errors import MissingInputException
+from figo.exceptions import MissingInputException
 from figo.results import ResultFailure, ResultSuccess
 from tests.sample_features import ciao, first, missing_input, using_missing_input, uuid
 
@@ -39,9 +39,9 @@ async def test_resolve_many(
     )
 
     assert result == {
-        "ciao": "firstassurdociao",
-        "first": "firstassurdo",
-        "uuid": "assurdo",
+        ciao: "firstassurdociao",
+        first: "firstassurdo",
+        uuid: "assurdo",
     }
 
 
@@ -55,12 +55,12 @@ async def test_safe_resolve_many(
         .safe_resolve_many([ciao, uuid, first, missing_input, using_missing_input])
     )
 
-    assert result["ciao"] == ResultSuccess("firstassurdociao")
-    assert isinstance(result["missing_input"], ResultFailure) and isinstance(
-        result["missing_input"].error, MissingInputException
+    assert result[ciao] == ResultSuccess("firstassurdociao")
+    assert isinstance(res := result[missing_input], ResultFailure) and isinstance(
+        res.error, MissingInputException
     )
-    assert isinstance(result["using_missing_input"], ResultFailure) and isinstance(
-        result["using_missing_input"].error, MissingInputException
+    assert isinstance(res := result[using_missing_input], ResultFailure) and isinstance(
+        res.error, MissingInputException
     )
 
 

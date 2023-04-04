@@ -23,6 +23,7 @@ class Resolution:
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
     def input(self, inputs: Mapping[AnyFeature, Any] | Mapping[str, Any]) -> Self:
+        """Sets a mapping of feature values that will be used in other resolutions."""
         # Set results from inputs
         parsed_input: dict[str, FeatureResult[Any]] = {
             f.name if isinstance(f, BaseFeature) else f: ResultSuccess(v)
@@ -31,28 +32,38 @@ class Resolution:
         self._inputs = self._inputs | parsed_input
         return self
 
-    async def resolve_many(self, features: Sequence[AnyFeature]) -> dict[str, Any]:
+    async def resolve_many(
+        self, features: Sequence[AnyFeature]
+    ) -> dict[AnyFeature, Any]:
+        """Resolve many features at once."""
         results = await asyncio.gather(*[self.resolve(f) for f in features])
-        return {f.name: results[i] for i, f in enumerate(features)}
+        return {f: results[i] for i, f in enumerate(features)}
 
     async def safe_resolve_many(
         self, features: Sequence[AnyFeature]
-    ) -> dict[str, FeatureResult[Any]]:
+    ) -> dict[AnyFeature, FeatureResult[Any]]:
+        """Same as resolve many but using `safe_resolve`."""
         results: Sequence[FeatureResult] = await asyncio.gather(
             *[self.safe_resolve(f) for f in features]
         )
-        return {f.name: results[i] for i, f in enumerate(features)}
+        return {f: results[i] for i, f in enumerate(features)}
 
     async def resolve(
         self,
         feature: BaseFeature[T],
     ) -> T:
+        """Resolves a feature, returning it's value. Throws on Exception"""
         result = await self.safe_resolve(feature)
         if isinstance(result, ResultFailure):
             raise result.error
         return result.value
 
     async def safe_resolve(self, feature: BaseFeature[T]) -> FeatureResult[T]:
+        """
+        Resolves a feature, returning a FeatureResult.
+
+        Does not throw on exception, instead returns a ResultFailure wrapping it
+        """
         if result := self._inputs.get(feature.name):
             return result
 
@@ -71,9 +82,9 @@ class Resolution:
             return ResultFailure(err)
 
     async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
-        return await maybe_await(feature.resolver(self.info()))
+        return await maybe_await(feature.resolver(self._info()))
 
-    def info(self) -> Info[Any]:
+    def _info(self) -> Info[Any]:
         return Info(self.ctx, self.resolve)
 
 
