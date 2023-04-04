@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from functools import cached_property
-from typing import Any, Awaitable, Callable, Generic
+from typing import Any, Awaitable, Callable, Generic, Type, cast
 
 from figo.utils.types import T, V
 
@@ -41,6 +41,13 @@ class BaseFeature(Generic[T]):  # pylint: disable=too-many-instance-attributes
     @cached_property
     def _signature(self) -> inspect.Signature:
         return inspect.signature(self.resolver, eval_str=True)
+
+    @cached_property
+    def type(self) -> Type[T]:
+        return cast(
+            Type[T],
+            self._signature.return_annotation,
+        )
 
 
 AnyFeature = BaseFeature[Any]
