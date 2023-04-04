@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Generic
 
-from utils.types import T
+from figo.utils.types import T
 
 # @dataclass
 # class EntityResults:

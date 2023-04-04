@@ -3,17 +3,13 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, ClassVar, Mapping, Sequence, Type, cast
+from typing import Any, ClassVar, Mapping, Sequence, Type
 
-import modin.pandas as md
-import pandas as pd
-import ray
 from typing_extensions import Self
 
 from figo.dag_solver import find_deps
 from figo.tasks import EntityTasks
-from figo.variants import BatchFeature, BatchGenerator
-from utils.types import T
+from figo.utils.types import T
 
 from .base import AnyFeature, BaseFeature, Info
 from .results import FeatureResult, ResultFailure, ResultSuccess
@@ -27,7 +23,6 @@ FRAME = "frame"
 class Resolution:
     features: dict[str, AnyFeature]
     ctx: Any
-    _frame: md.DataFrame = field(default=None)  # type: ignore
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -39,16 +34,6 @@ class Resolution:
         }
         self._inputs = self._inputs | parsed_input  # type: ignore
         return self
-
-    def input_batch(self, inputs: pd.DataFrame) -> Self:
-        self._inputs = {
-            str(col): ResultSuccess(md.Series(inputs[col])) for col in inputs.columns
-        }
-        return self
-
-    async def resolve_batch(self, features: Sequence[AnyFeature]) -> md.DataFrame:
-        results = await asyncio.gather(*[self.resolve(f) for f in features])
-        return md.DataFrame({f.name: results[i] for i, f in enumerate(features)})
 
     async def resolve_many(self, features: Sequence[AnyFeature]) -> dict[str, Any]:
         results = await asyncio.gather(*[self.resolve(f) for f in features])
@@ -76,7 +61,9 @@ class Resolution:
             return result
 
         if not self._tasks.get(feature):
-            self._tasks[feature] = asyncio.create_task(self._safe_resolve(feature))  # type: ignore
+            self._tasks[feature] = asyncio.create_task(
+                self._safe_resolve(feature)
+            )  # type: ignore
 
         return await self._tasks[feature]
 
@@ -85,53 +72,15 @@ class Resolution:
         feature: BaseFeature[T],
     ) -> FeatureResult[T]:
         try:
-            if isinstance(feature, BatchGenerator):
-                result = await self._batch_generator_resolver(feature)
-                return cast(Any, ResultSuccess(result))
-
-            if isinstance(feature, BatchFeature):
-                result = await self._batch_feature_resolver(feature)
-                return cast(Any, ResultSuccess(result))
-
-            if isinstance(feature, BaseFeature):
-                result = ResultSuccess(await self._instance_resolver(feature))
-                return result
-
+            return ResultSuccess(await self._instance_resolver(feature))
         except Exception as err:
-            result = ResultFailure(err)
-            return result
-
-    async def _batch_feature_resolver(self, feature: BatchFeature) -> md.Series:
-        result = cast(md.Series, await feature.resolver(self.info()))
-        self.frame_add_column(feature.name, result)
-        return result
+            return ResultFailure(err)
 
     async def _instance_resolver(self, feature: BaseFeature[T]) -> T:
         return await feature.resolver(self.info())
 
-    async def _batch_generator_resolver(self, feature: BatchGenerator) -> md.Series:
-        result = md.Series()
-
-        async for df in feature.resolver(self.info()):
-            result = md.concat([md.Series(df), result])
-
-        if result.empty:
-            raise Exception(
-                f"Unable to create a dataset for feture {feature.name}, function is not yielding anything"
-            )
-        self.frame_add_column(feature.name, result)
-        return result
-
     def info(self) -> Info[Any]:
-        return Info(self.ctx, self.resolve, self.frame)
-
-    def frame(self) -> md.DataFrame:
-        return self._frame
-
-    def frame_add_column(self, name: str, col: md.Series) -> None:
-        if self._frame is None:
-            self._frame = md.DataFrame({name: col})
-        self._frame[name] = col
+        return Info(self.ctx, self.resolve)
 
 
 class Figo:
@@ -159,8 +108,4 @@ class Figo:
         ]
 
     def start(self, ctx: Any = None) -> Resolution:
-        ray.init(  # type: ignore
-            runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
-            ignore_reinit_error=True,
-        )
         return Resolution(self.features, ctx)

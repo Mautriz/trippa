@@ -4,7 +4,7 @@ from typing import Any, Awaitable, cast
 
 from figo.base import AnyFeature, BaseFeature
 from figo.results import FeatureResult
-from utils.types import T
+from figo.utils.types import T
 
 
 @dataclass

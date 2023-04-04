@@ -7,10 +7,6 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = "^3.10"
 
-[tool.poetry.group.batch.dependencies]
-modin = {extras = ["ray"], version = "^0.18.0"}
-pandas = "^1.5.2"
-
 [tool.poetry.group.dev.dependencies]
 black = "*"
 isort = "*"

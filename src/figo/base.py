@@ -1,34 +1,21 @@
 from __future__ import annotations
 
-import asyncio
 import dataclasses
 import inspect
 from functools import cached_property
-from typing import Any, Awaitable, Callable, Generic, Sequence
+from typing import Any, Awaitable, Callable, Generic
 
-import modin.pandas as md
-
-from utils.types import T, V
+from figo.utils.types import T, V
 
 
 class Info(Generic[V]):
-    def __init__(
-        self,
-        ctx: V,
-        resolve: Callable[[AnyFeature], Awaitable[Any]],
-        frame: Callable[[], md.DataFrame],
-    ) -> None:
+    def __init__(self, ctx: V, resolve: Callable[[AnyFeature], Awaitable[Any]]) -> None:
         self.ctx = ctx
         self._resolve = resolve
-        self._frame = frame
         self.env: dict[str, str] = {}
 
     async def resolve(self, feature: BaseFeature[T]) -> T:
         return await self._resolve(feature)
-
-    async def frame(self, deps: Sequence[AnyFeature]) -> md.DataFrame:
-        await asyncio.gather(*[self.resolve(f) for f in deps])
-        return self._frame()
 
 
 @dataclasses.dataclass

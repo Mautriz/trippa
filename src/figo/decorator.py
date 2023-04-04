@@ -9,13 +9,16 @@ from enum import Enum
 from typing import Any, Awaitable, Callable
 
 from figo.errors import MissingInputException
-from utils.types import T
+from figo.utils.types import T
 
 from .base import BaseFeature, Info
 
 
 @dataclass(frozen=True)
 class feature:
+    meta: Any = None
+    """Any metadata you want to add that might be eventually retrieved."""
+
     def __call__(
         self,
         resolver: Callable[[Info[Any]], Awaitable[T]],
@@ -46,12 +49,3 @@ class input_feature:
             name=feature_name,
             resolver=raiser,
         )
-
-
-@dataclass(frozen=True)
-class source:
-    def __call__(
-        self,
-        resolver: Callable[[Info[Any]], Awaitable[T]],
-    ) -> BaseFeature[T]:
-        return BaseFeature[T](name=resolver.__name__, resolver=resolver)
