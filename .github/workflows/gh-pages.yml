@@ -23,7 +23,7 @@ jobs:
       - run: pip install poetry
       # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
       - run: make install
-      - run: poetry run pdoc -o docs src/figo
+      - run: poetry run pdoc -o docs src/trippa
       - uses: actions/upload-pages-artifact@v1
         with:
           path: docs/

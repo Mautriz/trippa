@@ -5,6 +5,6 @@ from trippa import Trippa
 
 
 @pytest.fixture
-def figo() -> Trippa:
-    figo_store = Trippa.from_modules([sample_features])
-    return figo_store
+def trippa() -> Trippa:
+    trippa_store = Trippa.from_modules([sample_features])
+    return trippa_store

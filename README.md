@@ -1,8 +1,8 @@
 ## Objective
-Figo is a python library for *resolving online features* easily in a type-safe and fine-grained way  
+trippa is a python library for *resolving online features* easily in a type-safe and fine-grained way  
 
 More specifically, you define a feature as a simple python function, ask for it's dependencies in the function itself, 
-figo will handle the graph resolution, no feature will ever be computed twice and all features asked will be typed so that the code is 
+trippa will handle the graph resolution, no feature will ever be computed twice and all features asked will be typed so that the code is 
 less buggy and easier to maintain and expand upon
 
 Other than that, **only the requested features and their dependencies will be computed**
@@ -12,9 +12,9 @@ to do as little as possible and generalize in an easy to comprehend way
 
 
 ## Installation
-You can install figo just like any other library using pip or whatever package manager you are using 
+You can install trippa just like any other library using pip or whatever package manager you are using 
 ```bash
-pip install figo
+pip install trippa
 ```
 
 ## Basics
@@ -22,7 +22,7 @@ pip install figo
 The first thing you want to do is define some features, we will just make a simple example
 
 ```python
-from figo import feature
+from trippa import feature
 
 @feature()
 def fullname(info: Info) -> str:
@@ -34,7 +34,7 @@ As we can see, it is a simple python function, taking in a context which is curr
 The function itself doesn't do much, it just returns a literal string, it would make sense to have some inputs or dependencies
 
 ```python
-from figo import input_feature
+from trippa import input_feature
 
 @input_feature()
 def name() -> str:
@@ -44,7 +44,7 @@ def name() -> str:
 def surname() -> str:
     ...
 ```
-**Everything** in figo is a feature, even inputs, we define `name` and `surname` as input_features 
+**Everything** in trippa is a feature, even inputs, we define `name` and `surname` as input_features 
 to make it clear that those must be provided by the client, let's now use them in the fullname resolver
 
 ```python
@@ -56,14 +56,15 @@ async def fullname(info: Info) -> str:
     return f"{name_} {surname_}"
 ```
 The feature became async, and requested the name and surname from the context, 
-both results will be typed correctly as `str`'s, figo will handle the resolution, just use them as you want 
+both results will be typed correctly as `str`'s, trippa will handle the resolution, just use them as you want 
 
 Now to get the result
 ```python
+from trippa import Trippa
 from .features import name, surname, fullname
 
-figo = Figo([name, surname, fullname])
-res = figo.start()
+trippa = Trippa([name, surname, fullname])
+res = trippa.start()
 
 # inputs can be given both by string or feature reference
 fullname_ = await res.input({name: "Mauro", "surname": "Insacco"}).resolve(fullname) 
@@ -173,20 +174,20 @@ async def risk_factor(info: Info[Context]) -> float:
 
 ```python
 ### main.py
-from figo import Figo
+from trippa import trippa
 
 import .features as features
 from .context import Context
 from .features import risk_factor, id
 
-# We can feed figo the feature definitions by just giving the modules
-figo = Figo.from_modules([features]).start(Context.new())
+# We can feed trippa the feature definitions by just giving the modules
+trippa = Trippa.from_modules([features]).start(Context.new())
 
 # Here we ask for the risk factor
-risk_factor_ = await figo.input({id: "user_id"}).resolve(risk_factor)
+risk_factor_ = await trippa.input({id: "user_id"}).resolve(risk_factor)
 
 # We can ask for anything we want, nothing will be recomputed.
-max_vehicle_value_ = await figo.resolve(max_vehicle_value)
+max_vehicle_value_ = await trippa.resolve(max_vehicle_value)
 
 ```
 
