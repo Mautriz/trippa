@@ -1,6 +1,6 @@
 [tool.poetry]
 authors = ["Mauro Insacco <mauro.insacco@gmail.com>"]
-description = "Feature Store un po'scemo"
+description = "A library for defining and resolving a DAG of features in python"
 name = "figo"
 version = "0.0.1"
 

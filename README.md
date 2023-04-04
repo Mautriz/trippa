@@ -25,7 +25,7 @@ The first thing you want to do is define some features, we will just make a simp
 from figo import feature
 
 @feature()
-def fullname(info: Info[Context]) -> str:
+def fullname(info: Info) -> str:
     return "Mauro Insacco"
 ```
 
