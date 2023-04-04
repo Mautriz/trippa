@@ -199,6 +199,6 @@ risk_factor = await figo.input({id: "user_id"}).resolve(risk_factor)
 - Develop
 - Run: `make check`
 - Profit
-### Otherwis
+### Otherwise
 If you dont want to install any of the above specifically, you can just use the `.devcontainer` configuration and 
 run the repo from vscode `Dev Containers` extension or any service that provides development containers (`Github Codespaces`) 
