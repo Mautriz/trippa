@@ -183,14 +183,16 @@ from .features import risk_factor, id
 figo = Figo.from_modules([features]).start(Context.new())
 
 # Here we ask for the risk factor
-# Everything will be resolved just ones
-risk_factor = await figo.input({id: "user_id"}).resolve(risk_factor)
+risk_factor_ = await figo.input({id: "user_id"}).resolve(risk_factor)
+
+# We can ask for anything we want, nothing will be recomputed.
+max_vehicle_value_ = await figo.resolve(max_vehicle_value)
 
 ```
 
-# Contributing
+## Contributing
 
-## Installation
+### Installation
 - Have
     - python 3.10+
     - poetry
