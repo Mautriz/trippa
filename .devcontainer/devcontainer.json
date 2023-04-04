@@ -4,16 +4,28 @@
 	"name": "Figo",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or the host.
 	// "forwardPorts": [5000, 5432],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip install --user -r requirements.txt",
-	// Configure tool-specific properties.
-	// "customizations": {},
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	// Create virtualenv inside container
+	"postCreateCommand": "make install",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"editor.minimap.enabled": false,
+				"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"python.languageServer": "Pylance",
+				"python.analysis.typeCheckingMode": "basic"
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"eamodio.gitlens"
+			]
+		}
+	}
 }
