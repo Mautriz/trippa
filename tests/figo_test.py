@@ -18,7 +18,7 @@ async def test_input(
 async def test_input_as_string(
     figo: Figo,
 ) -> None:
-    result = await figo.start().input({uuid: "assurdo"}).resolve(ciao)
+    result = await figo.start().input({"uuid": "assurdo"}).resolve(ciao)
     assert result == "firstassurdociao"
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from logging import getLogger
 from typing import Any, ClassVar, Mapping, Sequence, Type
 
 from typing_extensions import Self
@@ -14,8 +13,6 @@ from figo.utils.types import T
 
 from .base import AnyFeature, BaseFeature, Info
 from .results import FeatureResult, ResultFailure, ResultSuccess
-
-logger = getLogger(__name__)
 
 
 @dataclass
