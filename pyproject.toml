@@ -2,7 +2,7 @@
 authors = ["Mauro Insacco <mauro.insacco@gmail.com>"]
 description = "Feature Store un po'scemo"
 name = "figo"
-version = "0.1.0"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = "^3.10"
