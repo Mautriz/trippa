@@ -33,7 +33,7 @@ jobs:
       run: poetry build
     - name: Publish package
       run: |
-        poetry config pypi-token.pypi $token
+        poetry config pypi-token.pypi $password
         poetry publish
       env:
         password: ${{ secrets.PYPI_TOKEN }}
