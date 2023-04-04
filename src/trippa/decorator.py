@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Awaitable, Callable, cast, overload
 
-from figo.exceptions import MissingInputException
-from figo.utils.types import T
+from trippa.exceptions import MissingInputException
+from trippa.utils.types import T
 
 from .base import BaseFeature, Info
 

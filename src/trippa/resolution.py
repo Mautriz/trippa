@@ -6,10 +6,10 @@ from typing import Any, ClassVar, Mapping, Sequence, Type
 
 from typing_extensions import Self
 
-from figo.dependencies import find_deps
-from figo.tasks import EntityTasks
-from figo.utils.asyncio import maybe_await
-from figo.utils.types import T
+from trippa.dependencies import find_deps
+from trippa.tasks import EntityTasks
+from trippa.utils.asyncio import maybe_await
+from trippa.utils.types import T
 
 from .base import AnyFeature, BaseFeature, Info
 from .results import FeatureResult, ResultFailure, ResultSuccess
@@ -17,8 +17,21 @@ from .results import FeatureResult, ResultFailure, ResultSuccess
 
 @dataclass
 class Resolution:
+    """
+    This is the hearth of `trippa`.
+
+    The Resolution (aka resolution context) keeps track of all the computed features
+    and determines how to resolve them.
+
+    Spawn a new Resolution any time you want to calculate stuff
+    on a new entity/row or just reset the calculations
+    """
+
     features: Mapping[str, AnyFeature]
+    """Features definitions available."""
     ctx: Any
+    """Context passed to the resolvers."""
+
     _inputs: dict[str, FeatureResult[Any]] = field(default_factory=dict)
     _tasks: EntityTasks = field(default_factory=EntityTasks)
 
@@ -88,7 +101,9 @@ class Resolution:
         return Info(self.ctx, self.resolve)
 
 
-class Figo:
+class Trippa:
+    """Application entrypoint, used to generated resolution contexts'"""
+
     resolution_class: ClassVar[Type[Resolution]] = Resolution
 
     features: Mapping[str, AnyFeature]
@@ -113,4 +128,5 @@ class Figo:
         ]
 
     def start(self, ctx: Any = None) -> Resolution:
+        """Starts a new resolution context."""
         return Resolution(self.features, ctx)

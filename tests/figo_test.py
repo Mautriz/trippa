@@ -1,14 +1,14 @@
 import pytest
 
-from figo import Figo
-from figo.exceptions import MissingInputException
-from figo.results import ResultFailure, ResultSuccess
 from tests.sample_features import ciao, first, missing_input, using_missing_input, uuid
+from trippa import Trippa
+from trippa.exceptions import MissingInputException
+from trippa.results import ResultFailure, ResultSuccess
 
 
 @pytest.mark.asyncio
 async def test_input(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     result = await figo.start().input({uuid: "assurdo"}).resolve(uuid)
     assert result == "assurdo"
@@ -16,7 +16,7 @@ async def test_input(
 
 @pytest.mark.asyncio
 async def test_input_as_string(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     result = await figo.start().input({"uuid": "assurdo"}).resolve(ciao)
     assert result == "firstassurdociao"
@@ -24,7 +24,7 @@ async def test_input_as_string(
 
 @pytest.mark.asyncio
 async def test_input_as_feature(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     result = await figo.start().input({uuid: "assurdo"}).resolve(ciao)
     assert result == "firstassurdociao"
@@ -32,7 +32,7 @@ async def test_input_as_feature(
 
 @pytest.mark.asyncio
 async def test_resolve_many(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     result = (
         await figo.start().input({uuid: "assurdo"}).resolve_many([ciao, uuid, first])
@@ -47,7 +47,7 @@ async def test_resolve_many(
 
 @pytest.mark.asyncio
 async def test_safe_resolve_many(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     result = (
         await figo.start()
@@ -66,7 +66,7 @@ async def test_safe_resolve_many(
 
 @pytest.mark.asyncio
 async def test_no_input_error(
-    figo: Figo,
+    figo: Trippa,
 ) -> None:
     with pytest.raises(MissingInputException):
         await figo.start().resolve(ciao)

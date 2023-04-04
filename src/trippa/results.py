@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Generic
 
-from figo.utils.types import T
+from trippa.utils.types import T
 
 
 @dataclass(frozen=True)

@@ -2,9 +2,9 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any, Awaitable, cast
 
-from figo.base import AnyFeature, BaseFeature
-from figo.results import FeatureResult
-from figo.utils.types import T
+from trippa.base import AnyFeature, BaseFeature
+from trippa.results import FeatureResult
+from trippa.utils.types import T
 
 
 @dataclass

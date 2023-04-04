@@ -1,7 +1,7 @@
 [tool.poetry]
 authors = ["Mauro Insacco <mauro.insacco@gmail.com>"]
 description = "A library for defining and resolving a DAG of features in python"
-name = "figo"
+name = "trippa"
 version = "0.0.1"
 
 [tool.poetry.dependencies]

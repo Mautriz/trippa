@@ -9,7 +9,7 @@ import inspect
 from functools import cached_property
 from typing import Any, Awaitable, Callable, Generic, Type, cast
 
-from figo.utils.types import T, V
+from trippa.utils.types import T, V
 
 
 class Info(Generic[V]):

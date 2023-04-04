@@ -1,6 +1,6 @@
-from figo import feature
-from figo.base import Info
-from figo.decorator import input_feature
+from trippa import feature
+from trippa.base import Info
+from trippa.decorator import input_feature
 
 
 @input_feature()

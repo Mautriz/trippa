@@ -1,10 +1,10 @@
 import pytest
 
 import tests.sample_features as sample_features
-from figo import Figo
+from trippa import Trippa
 
 
 @pytest.fixture
-def figo() -> Figo:
-    figo_store = Figo.from_modules([sample_features])
+def figo() -> Trippa:
+    figo_store = Trippa.from_modules([sample_features])
     return figo_store
