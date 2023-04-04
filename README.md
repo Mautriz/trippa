@@ -1,5 +1,3 @@
-"""
-
 ## Objective
 Figo is a python library for *resolving online features* easily in a type-safe and fine-grained way  
 
@@ -189,3 +187,18 @@ figo = Figo.from_modules([features]).start(Context.new())
 risk_factor = await figo.input({id: "user_id"}).resolve(risk_factor)
 
 ```
+
+# Contributing
+
+## Installation
+- Have
+    - python 3.10+
+    - poetry
+    - make
+- Run: `make install`
+- Develop
+- Run: `make check`
+- Profit
+### Otherwis
+If you dont want to install any of the above specifically, you can just use the `.devcontainer` configuration and 
+run the repo from vscode `Dev Containers` extension or any service that provides development containers (`Github Codespaces`) 
