@@ -1,5 +1,5 @@
 ## Objective
-trippa is a python library for *resolving online features* easily in a type-safe and fine-grained way  
+[trippa](https://github.com/Mautriz/trippa) is a python library for *resolving online features* easily in a type-safe and fine-grained way
 
 More specifically, you define a feature as a simple python function, ask for it's dependencies in the function itself, 
 trippa will handle the graph resolution, no feature will ever be computed twice and all features asked will be typed so that the code is 
@@ -194,6 +194,7 @@ max_vehicle_value_ = await trippa.resolve(max_vehicle_value)
 ## Contributing
 
 ### Installation
+- Clone the [GitHub](https://github.com/Mautriz/trippa) repository!
 - Have
     - python 3.10+
     - poetry
