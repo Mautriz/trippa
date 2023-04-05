@@ -147,7 +147,7 @@ async def max_vehicle_value(info: Info[Context]) -> float:
 
 
 @feature(meta={"export": False})
-async def family_members(info: Info[Context]) -> list[UserInfo]
+async def family_members(info: Info[Context]) -> list[UserInfo]:
     user_info_ = await info.resolve(user_info)
     return await info.ctx.user_api.get_family_members(user_info_.fiscal_code)
 
@@ -174,17 +174,20 @@ async def risk_factor(info: Info[Context]) -> float:
 
 ```python
 ### main.py
-from trippa import trippa
+from trippa import Trippa
 
 import .features as features
 from .context import Context
-from .features import risk_factor, id
+from .features import risk_factor, id, max_vehicle_value
 
 # We can feed trippa the feature definitions by just giving the modules
 trippa = Trippa.from_modules([features]).start(Context.new())
 
+# Add inputs
+trippa.input({id: "user_id"})
+
 # Here we ask for the risk factor
-risk_factor_ = await trippa.input({id: "user_id"}).resolve(risk_factor)
+risk_factor_ = await trippa.resolve(risk_factor)
 
 # We can ask for anything we want, nothing will be recomputed.
 max_vehicle_value_ = await trippa.resolve(max_vehicle_value)
